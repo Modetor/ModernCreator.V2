@@ -2,27 +2,35 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using IronPython.Runtime;
-
+using Modetor.Net.Server;
 namespace Modetor_Server
 {
     class Program
     {
         static void Main(string[] args)
         {
-            ///new Modetor.Net.Server.Server();
+            Server server = new Server();
             Welcome();
 
             string cmd = null;
             do
             {
                 Blue("Type command >> ");
-                cmd = Console.ReadLine()?.ToLower() ?? "exit";
+                cmd = Console.ReadLine()?.Trim()?.ToLower() ?? "exit";
 
                 if (cmd.Equals("exit"))
                     break;
 
-                
+                if (cmd.StartsWith("run"))
+                {
+                    if(cmd.Length == 3)
+                        Red("Syntax Error. Run command must be like run 127.0.0.1");
+                    else
+                    {
+                        cmd = cmd.Substring(3).Trim();
+                        server.SetAddress(cmd);
+                    }
+                }
             }
             while (true);
             
