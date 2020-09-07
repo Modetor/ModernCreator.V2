@@ -23,12 +23,14 @@ namespace Modetor_Server
 
                 if (cmd.StartsWith("run"))
                 {
-                    if(cmd.Length == 3)
-                        Red("Syntax Error. Run command must be like run 127.0.0.1");
+                    if(cmd.Length == 3 || !cmd.Contains(':'))
+                        Red("Syntax Error. Run command must be like run 127.0.0.1:80");
                     else
                     {
                         cmd = cmd.Substring(3).Trim();
-                        server.SetAddress(cmd);
+                        string[] address = cmd.Split(':');
+                        server.SetAddress(address[0], address[1]);
+
                     }
                 }
             }
