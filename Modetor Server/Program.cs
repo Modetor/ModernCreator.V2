@@ -22,7 +22,7 @@ namespace Modetor_Server
                 if (cmd.Equals("exit"))
                     break;
 
-                if()
+                
             }
             while (true);
             
