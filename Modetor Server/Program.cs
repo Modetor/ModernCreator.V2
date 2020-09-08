@@ -9,7 +9,9 @@ namespace Modetor_Server
     {
         static void Main(string[] args)
         {
-            Server server = new Server();
+            Server server = Server.GetServer();
+
+
             Welcome();
 
             string cmd = null;
@@ -29,7 +31,14 @@ namespace Modetor_Server
                     {
                         cmd = cmd.Substring(3).Trim();
                         string[] address = cmd.Split(':');
-                        server.SetAddress(address[0], address[1]);
+                        int port = 80;
+                        if(!int.TryParse(address[0], out port))
+                        {
+                            port = 80;
+                            Red("[Command.Run] : Port value must be a valid integer. fallback port(80) will be used");
+
+                        }
+                        server.SetAddress(address[0], port);
 
                     }
                 }

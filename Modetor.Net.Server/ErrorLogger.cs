@@ -20,7 +20,27 @@ namespace Modetor.Net.Server
                 Console.ResetColor();
             }
         }
-
+        public void Log(string message, string stacktrace)
+        {
+            string text = $"\nAt:{DateTime.Now.ToShortDateString()}" +" {\n";
+            text += $"Message:{message},\n";
+            text += $"Stacktrace:{stacktrace}"+"\n}";
+            
+            try { File.WriteAllText(FilePath, text); }
+            catch(Exception exp)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write("Failed to write to logging file. Message : {1}\nStacktrace : {0}\n", exp.StackTrace, exp.Message);
+                Console.ResetColor();
+            }
+        }
+        public void Print(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.Write("{0}\n", message);
+            Console.ResetColor();
+        }
+        public void Log(Exception exp) => Log(exp.Message, exp.StackTrace);
         public void Clear() {
             try
             {
