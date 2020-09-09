@@ -34,8 +34,10 @@ namespace Modetor.Net.Server
                 Console.ResetColor();
             }
         }
-        public void Print(string message)
+        public void PrintError(string message) => Print(message);
+        public static void Print(string message)
         {
+            if (!Settings.AllowOutput) return;
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.Write("{0}\n", message);
             Console.ResetColor();

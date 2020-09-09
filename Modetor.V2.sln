@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modetor.Net.Server", "Modetor.Net.Server\Modetor.Net.Server.csproj", "{A2E3D91A-710B-4EC6-BBB0-386A161E3AD9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modetor Server", "Modetor Server\Modetor Server.csproj", "{85947BBD-DC94-4F3B-A42B-E8AE71C31A17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ModernCreator Console", "Modetor Server\ModernCreator Console.csproj", "{85947BBD-DC94-4F3B-A42B-E8AE71C31A17}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A2E3D91A-710B-4EC6-BBB0-386A161E3AD9} = {A2E3D91A-710B-4EC6-BBB0-386A161E3AD9}
 	EndProjectSection
