@@ -62,6 +62,6 @@ namespace Modetor.Net.Server
             }
         }
 
-        internal readonly string FilePath = string.Format(AppDomain.CurrentDomain.BaseDirectory + "base{0}settings.ini", Path.DirectorySeparatorChar);
+        internal readonly string FilePath = string.Format(AppDomain.CurrentDomain.BaseDirectory + "base{0}errors.txt", Path.DirectorySeparatorChar);
     }
 }

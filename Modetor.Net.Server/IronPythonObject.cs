@@ -13,7 +13,7 @@
             Scope = Engine.CreateScope();
         }
         public void SetSearchPaths(string[] p) => Engine.SetSearchPaths(p);
-        
+        public void AddPath(string path) => DefaultSearchPaths.Add(path);
         public string Run()
         {
             string result;
@@ -26,13 +26,12 @@
             }
             return result;
         }
-        public System.Collections.Generic.List<string> DefaultSearchPaths = new System.Collections.Generic.List<string>()
+        public readonly System.Collections.Generic.List<string> DefaultSearchPaths = new System.Collections.Generic.List<string>()
         {
-            ".", 
-            System.AppDomain.CurrentDomain.BaseDirectory+@"res\ipy\Lib" , 
-            System.AppDomain.CurrentDomain.BaseDirectory+@"res\ipy\DLLs" , 
-            System.AppDomain.CurrentDomain.BaseDirectory+@"res\ipy\Lib\site-packages"
-
+            ".",
+            System.AppDomain.CurrentDomain.BaseDirectory+FilePath.Build("res/ipy/Lib"),
+            System.AppDomain.CurrentDomain.BaseDirectory+FilePath.Build("res/ipy/DLLs") ,
+            System.AppDomain.CurrentDomain.BaseDirectory+FilePath.Build("res/ipy/Lib/site-packages")
         };
         public dynamic Engine { get; private set; }
         public dynamic Scope { get; private set; }

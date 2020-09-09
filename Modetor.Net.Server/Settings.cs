@@ -3,8 +3,7 @@ namespace Modetor.Net.Server
 {
     class Settings
     {
-        public static readonly string Path = string.Format(AppDomain.CurrentDomain.BaseDirectory + "base{0}settings.ini", System.IO.Path.DirectorySeparatorChar);
-
+        
 
         /// <summary>
         ///     Reads the settings.ini file located in subfolder /base
@@ -14,8 +13,8 @@ namespace Modetor.Net.Server
         {
             try
             {
-                string[] lines = System.IO.File.ReadAllLines(Path, System.Text.Encoding.UTF8);
-                if (lines == null) throw new System.IO.IOException("failed to read file:" + Path);
+                string[] lines = System.IO.File.ReadAllLines(SettingsFilePath, System.Text.Encoding.UTF8);
+                if (lines == null) throw new System.IO.IOException("failed to read file:" + SettingsFilePath);
 
                 foreach (string line in lines)
                 {
@@ -41,9 +40,12 @@ namespace Modetor.Net.Server
                         }
                         ThreadMechanism = val;
                     }
+
+                    else if (parts[0].StartsWith("connections-handler"))
+                        ConnectionsHandler = BasePath + FilePath.Build(parts[1]);
                 }
 
-                
+                //Console.WriteLine(System.IO.File.Exists(ConnectionsHandler));
                 return true;
             }
             catch (Exception exp)
@@ -55,18 +57,57 @@ namespace Modetor.Net.Server
         }
 
 
+        /**\
+        **** 
+        ****  Static members
+        ****
+        \**/
+
         public static string[] Repositories { get; private set; } = null;
         public static int ThreadMechanism { get; private set; } = 2;
         public static bool AllowOutput { get; private set; } = true;
         public static bool AllowNetworkConnections { get; private set; } = false;
         public static bool AllowSmartSwitch { get; private set; } = false;
         public static string ConnectionsHandler { get; private set; } = null;
+
+
+        /**\
+        **** 
+        ****  Readonly Static members
+        ****
+        \**/
+
+        public static readonly string SettingsFilePath = string.Format(AppDomain.CurrentDomain.BaseDirectory + "base{0}settings.ini", System.IO.Path.DirectorySeparatorChar);
+        public static readonly string BasePath = AppDomain.CurrentDomain.BaseDirectory + $"base{System.IO.Path.DirectorySeparatorChar}";
+        public static readonly string RootPath = BasePath + $"root{System.IO.Path.DirectorySeparatorChar}";
+        public static readonly string ResourcePath = BasePath + $"res{System.IO.Path.DirectorySeparatorChar}";
+
     }
 
 
 
     public static class FilePath
     {
-        public static string 
+        /// <summary>
+        ///  Use '/' as you default dir-separator and it will replaced with platform's one
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static string Build(string text) => text.Replace('/', System.IO.Path.DirectorySeparatorChar);
+        /// <summary>
+        /// put the path as Build("Parent","Son Folder","A") 
+        /// to generate something "Parent/Son Folder/A" or "Parent\Son Folder\A"
+        /// based on the plateform
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static string Build(params string[] text)
+        {
+            string path = "";
+            foreach (string part in text)
+                path += $"{part}{System.IO.Path.DirectorySeparatorChar}";
+
+            return path.Substring(0, path.Length-1);
+        }
     }
 }

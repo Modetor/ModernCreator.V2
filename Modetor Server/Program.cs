@@ -11,6 +11,7 @@ namespace Modetor_Server
         {
             Server server = Server.GetServer();
 
+            SetupServerEvent(server);
 
             Welcome();
 
@@ -32,20 +33,29 @@ namespace Modetor_Server
                         cmd = cmd.Substring(3).Trim();
                         string[] address = cmd.Split(':');
                         int port = 80;
-                        if(!int.TryParse(address[0], out port))
+                        if(!int.TryParse(address[1], out port))
                         {
                             port = 80;
                             Red("[Command.Run] : Port value must be a valid integer. fallback port(80) will be used");
 
                         }
                         server.SetAddress(address[0], port);
-
+                        server.Start();
                     }
                 }
             }
             while (true);
             
         }
+
+        private static void SetupServerEvent(Server server)
+        {
+            server.OnStart = (ip, port) =>
+            {
+                Green($"Server started {ip}:{port}\n");
+            };
+        }
+
         static string[] GetNeworkIPs()
         {
             List<string> l = new List<string>();
