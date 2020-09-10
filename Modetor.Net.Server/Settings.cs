@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace Modetor.Net.Server
 {
     class Settings
@@ -43,6 +44,20 @@ namespace Modetor.Net.Server
 
                     else if (parts[0].StartsWith("connections-handler"))
                         ConnectionsHandler = BasePath + FilePath.Build(parts[1]);
+                    else if (parts[0].StartsWith("connections-handler-repos"))
+                    {
+                        if (parts[1].Equals("*"))
+                            ConnectionsHandlerRepositories = Repositories;
+                        else if(parts[1].Contains(',')) {
+                            ConnectionsHandlerRepositories = parts[1].Split(',');
+                            for (int i = ConnectionsHandlerRepositories.Length - 1; i > -1; i--)
+                                ConnectionsHandlerRepositories[i] = ConnectionsHandlerRepositories[i].Trim();
+                        }
+                        else {
+                            ErrorLogger.Print("[Settings] : Value error in settings.ini at line '" + line + "'. value expected to be repo,repo1,repo2... or *");
+                            return false;
+                        }
+                    }
                 }
 
                 //Console.WriteLine(System.IO.File.Exists(ConnectionsHandler));
@@ -69,6 +84,7 @@ namespace Modetor.Net.Server
         public static bool AllowNetworkConnections { get; private set; } = false;
         public static bool AllowSmartSwitch { get; private set; } = false;
         public static string ConnectionsHandler { get; private set; } = null;
+        public static string[] ConnectionsHandlerRepositories { get; private set; } = null;
 
 
         /**\

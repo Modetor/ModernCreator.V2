@@ -36,5 +36,36 @@
         public dynamic Engine { get; private set; }
         public dynamic Scope { get; private set; }
         private string scriptfile = null;
+
+
+
+
+
+
+
+
+
+
+        public static void SetupScope(dynamic Scope, System.Net.Sockets.TcpClient client, HeaderKeys hk)
+        {
+            Scope.ServerResult = "Server has nothing to say";
+            Scope.ServerRequest = hk;
+            Scope.Client = client;
+            Scope.ClientAddress = client.Client.RemoteEndPoint.ToString();
+            Scope.Stream = client.GetStream();
+
+            Scope.Send = new System.Action<string>(async (text) =>
+            {
+                await client.GetStream().WriteAsync(System.Text.Encoding.UTF8.GetBytes(text));
+                await client.GetStream().FlushAsync();
+            });
+            Scope.SendNow = new System.Action<string>((text) =>
+            {
+                client.GetStream().Write(System.Text.Encoding.UTF8.GetBytes(text));
+                client.GetStream().Flush();
+            });
+            Scope.Close = new System.Action(() => client.Close());
+            Scope.
+        }
     }
 }

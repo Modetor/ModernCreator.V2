@@ -5,7 +5,7 @@ using System.Threading;
 using IronPython.Runtime;
 namespace Modetor.Net.Server
 {
-    public class Server
+    public class Server : IDisposable
     {
         internal static Server instance = null; 
         public static Server GetServer()
@@ -87,6 +87,7 @@ namespace Modetor.Net.Server
 
         public void Stop()
         {
+            mTcpListener.Stop();
             IsRunning = false;
         }
 
@@ -97,11 +98,18 @@ namespace Modetor.Net.Server
 
         private void MultiThreadedServer()
         {
-            
-            while (IsRunning)
+            try
             {
-                TcpClient client = mTcpListener.AcceptTcpClient();
-                new Thread(() => ManageClient(client)) { IsBackground = true }.Start();
+
+                while (IsRunning)
+                {
+                    TcpClient client = mTcpListener.AcceptTcpClient();
+                    new Thread(() => ManageClient(client)) { IsBackground = true }.Start();
+                }
+            }
+            catch (Exception exp)
+            {
+                OnListenerError ?. Invoke(exp);
             }
         }
 
@@ -115,25 +123,15 @@ namespace Modetor.Net.Server
         
         private void ManageClient(TcpClient client)
         {
-            Console.WriteLine("Python running");
+            byte[] b_data = new byte[client.Available];
+            client.GetStream().Read(b_data, 0, b_data.Length);
+            string content = System.Text.Encoding.UTF8.GetString(b_data);
+            HeaderKeys hk = HeaderKeys.From(content);
             if (Settings.ConnectionsHandler != null)
             {
-                
                 IronPythonObject connection_handler = IronPythonObject.GetObject(Settings.ConnectionsHandler);
                 connection_handler.DefaultSearchPaths[0] = Directory.GetParent(Settings.ConnectionsHandler).FullName;
-                connection_handler.Scope.TcpClient = client;
-                connection_handler.Scope.ClientStream = client.GetStream();
-                connection_handler.Scope.Write = new Action<string>((s) =>
-                {
-                    byte[] bs = System.Text.Encoding.UTF8.GetBytes(s);
-                    client.GetStream().Write(bs, 0, bs.Length);
-                });
-                connection_handler.Scope.FWrite = new Action<string>((s) =>
-                {
-                    byte[] bs = System.Text.Encoding.UTF8.GetBytes(s);
-                    client.GetStream().Write(bs, 0, bs.Length);
-                    client.GetStream().FlushAsync();
-                });
+
                 string result = connection_handler.Run();
                 if(result != null) // An error occurred...
                 {
@@ -144,12 +142,17 @@ namespace Modetor.Net.Server
             else
             {
                 Console.WriteLine("is null");
-
             }
 
             if (client.Connected)
                 client.Close();
         }
+
+        public void Dispose()
+        {
+            ((IDisposable)instance).Dispose();
+        }
+
         public bool IsRunning { get; private set; } = true;
         public string Address { get; private set; }
         public string InternetProtocol { get; private set; }
@@ -159,7 +162,8 @@ namespace Modetor.Net.Server
         public Action<string, int> OnStart;
         public Action<string, int> OnStop;
         public Action<string, int> OnReceiveConnection;
-        public Action<string, int, object> OnSockerError;
+        public Action<string, int, object> OnSocketError;
+        public Action<Exception> OnListenerError;
 
 
         private bool mServerReady = true;

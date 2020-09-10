@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ModernCreator Console": {
+      "commandName": "Project",
+      "commandLineArgs": "run=127.0.0.1:80"
+    }
+  }
+}

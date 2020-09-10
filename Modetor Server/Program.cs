@@ -9,43 +9,51 @@ namespace Modetor_Server
     {
         static void Main(string[] args)
         {
-            Server server = Server.GetServer();
-
-            SetupServerEvent(server);
-
-            Welcome();
-
-            string cmd = null;
-            do
+            
+            if(args != null && args.Length != 0)
             {
-                Blue("Type command >> ");
-                cmd = Console.ReadLine()?.Trim()?.ToLower() ?? "exit";
+                Server server = Server.GetServer();
 
-                if (cmd.Equals("exit"))
-                    break;
+                SetupServerEvent(server);
 
-                if (cmd.StartsWith("run"))
+                foreach (string command in args)
                 {
-                    if(cmd.Length == 3 || !cmd.Contains(':'))
-                        Red("Syntax Error. Run command must be like run 127.0.0.1:80");
-                    else
+                    if(command.Equals("help"))
                     {
-                        cmd = cmd.Substring(3).Trim();
-                        string[] address = cmd.Split(':');
-                        int port = 80;
-                        if(!int.TryParse(address[1], out port))
+                        Blue("All available commands { \n");
+                        Green("\thelp  -  "); Console.WriteLine(" prints all commands");
+                        Green("\trun   -  "); Console.WriteLine(" used to start the server. e.g: run=127.0.0.1:80");
+                        Green("\tlsips -  "); Console.WriteLine(" list available ips");
+                        Blue("}\n");
+                    }
+                    else if(command.Equals("lsips"))
+                        PrintAvailableIPs();
+                    else if (command.StartsWith("run="))
+                    {
+                        Console.WriteLine("Yes");
+                        if (command.Length == 4 || !command.Contains(':'))
+                            Red("Syntax Error. Run command must be like run=127.0.0.1:80");
+                        else
                         {
-                            port = 80;
-                            Red("[Command.Run] : Port value must be a valid integer. fallback port(80) will be used");
+                            string[] address = command.Split('=')[1].Trim().Split(':');
+                            int port = 80;
+                            if (!int.TryParse(address[1], out port))
+                            {
+                                port = 80;
+                                Red("[Command.Run] : Port value must be a valid integer. fallback port(80) will be used");
 
+                            }
+                            server.SetAddress(address[0], port);
+                            server.Start();
+                            System.Threading.Thread.CurrentThread.Join();
                         }
-                        server.SetAddress(address[0], port);
-                        server.Start();
                     }
                 }
             }
-            while (true);
-            
+            else
+                Welcome();
+
+
         }
 
         private static void SetupServerEvent(Server server)
@@ -78,12 +86,18 @@ namespace Modetor_Server
             Yellow("// "); Blue("Author : Mohammad S. Albay\n");
             for(int i = 0; ++i < 50;)
                 Yellow("-");
+
+            PrintAvailableIPs();
+
+            Yellow("\n\nNote: help to show available commands\n");
+        }
+
+        private static void PrintAvailableIPs()
+        {
             Green("\nAvailable IPs : \n");
 
             foreach (string item in GetNeworkIPs())
                 Console.WriteLine(" - " + item);
-
-            Yellow("\n\nNote: help to show available commands\n");
         }
 
         static void Blue(string text)
