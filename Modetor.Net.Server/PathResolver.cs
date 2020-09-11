@@ -1,91 +1,94 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using conf = Modetor.Net.Server.Settings;
 
 namespace Modetor.Net.Server
 {
     public static class PathResolver
-    {/*
+    {
         public static bool Resolve(string target, string referrer, out string resultfile)
         {
             //if(HeaderKeys.DEBUG_MODE) Console.WriteLine("D [{2}] : target({0}) - referrer({1})", target, referrer, nameof(PathResolver));
-            System.Diagnostics.Debug.Assert(target != null, "path is null");
+            Console.WriteLine("Target : {0}",target);
+            if(target == null)
+            {
+                target = Settings.MainPage;
+                ErrorLogger.Print("[PathResolver] : arg0(target) is null, used Settings.MainPage as a fallback target");
+            }
 
             string file = string.Empty;
-            
-            string[] names = conf.Repositories
 
-            target = target.Replace('/', '\\');
+            string[] names = Settings.Repositories;
+            char separator = Path.DirectorySeparatorChar;
+            //target = target.Replace('/', separator);
 
-            if (target.Equals("\\"))
+            if (target.Equals(separator))
                 target = string.Empty;
 
-            if (target.StartsWith("\\"))
+            if (target.StartsWith(separator))
                 target = target.Substring(1);
 
-            if (target.EndsWith("\\"))
+            if (target.EndsWith(separator))
                 target = target.Substring(0, target.Length - 1);
 
             if (referrer.Equals(string.Empty))
             {
                 if (target.Equals(string.Empty))
-                    file = conf.MainPage;
+                    file = Settings.MainPage;
                 else if (names.Contains(target))
-                    file = conf.MainSource + target + "\\" + conf.Rules[target].Home;
-                else if (names.Contains(target.Split('\\')[0]))
-                    file = conf.MainSource + target;
-                else if(File.Exists(conf.MainSource+target))
-                    file = conf.MainSource + target;
+                    file = Settings.ResourcePath + target + separator.ToString() + Settings.RepositoriesRules[target].HomeFile;
+                else if (names.Contains(target.Split(separator)[0]))
+                    file = Settings.ResourcePath + target;
+                else if(File.Exists(Settings.ResourcePath + target))
+                    file = Settings.ResourcePath + target;
             }
             else
             {
                 if (names.Contains(target))
-                    file = conf.MainSource + target + "\\" + conf.Rules[target].Home;
+                    file = Settings.ResourcePath + target + separator.ToString() + Settings.RepositoriesRules[target].HomeFile;
                 else
                 {
-                    referrer = referrer.Replace('/', '\\');
-                    if (referrer.StartsWith("\\"))
+                    referrer = referrer.Replace('/', separator);
+                    if (referrer.StartsWith(separator))
                         referrer = referrer.Substring(1);
 
-                    if (referrer.EndsWith("\\"))
+                    if (referrer.EndsWith(separator))
                         referrer = referrer.Substring(0, referrer.Length - 1);
 
-                    if (File.Exists(conf.MainSource + target))
+                    if (File.Exists(Settings.ResourcePath + target))
                     {
-                        file = conf.MainSource + target;
+                        file = Settings.ResourcePath + target;
                     }
 
-                    else if (string.Equals(referrer.Split('\\')[0], target.Split('\\')[0]))
+                    else if (string.Equals(referrer.Split(separator)[0], target.Split(separator)[0]))
                     {
-                        if (names.Contains(target.Split('\\')[0]))
-                            file = conf.MainSource + target;
+                        if (names.Contains(target.Split(separator)[0]))
+                            file = Settings.ResourcePath + target;
                     }
                     else
                     {
-                        if (names.Contains(target.Split('\\')[0]))
+                        if (names.Contains(target.Split(separator)[0]))
                         {
-                            file = conf.MainSource + target;
-                            //Console.WriteLine("RN: {0}, {1}", file, File.Exists(file));
+                            file = Settings.ResourcePath + target;
                         }
-                        else if (names.Contains(referrer.Split('\\')[0]))
-                        {
-
-                            file = conf.MainSource + referrer + '\\' + target;
-                            //Console.WriteLine("RX: {0}, {1}", file, File.Exists(file));
-                        }
+                        else if (names.Contains(referrer.Split(separator)[0]))
+                            file = Settings.ResourcePath + FilePath.Build(referrer, target);
                     }
                 }
                 
             }
 
-            if (HeaderKeys.DEBUG_MODE) Console.WriteLine("D [{3}] : target({1}), referrer({2}) - available = {0}", File.Exists(path: file) ? "Yes" : "No",  target, referrer, nameof(PathResolver));
-
+            if(Settings.AllowOutput)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("[PathResolver] : target({0}), referrer({1}) - available = ", target, referrer, (File.Exists(path: file) ? "Yes" : "No"));
+                Console.ResetColor();
+            }
             resultfile = file;
             return File.Exists(path: resultfile);
         }
         public static string GetRuleFromHeaderKeys(HeaderKeys keys)
-        {
+        {/*
             //__get_rule__(file ?? keys.GetValue("target") ?? keys.GetValue("Referer"));
             string rule = string.Empty;
             string[] names = conf.GetRules();
@@ -115,9 +118,10 @@ namespace Modetor.Net.Server
 
             if(names.Contains(referrer.Split('\\')[0])) {
                 rule = referrer.Split('\\')[0];
-                if (!conf.Rules[rule].Available) rule = string.Empty;
+                if (!conf.Repositories[rule].Available) rule = string.Empty;
             }
-            return rule ?? string.Empty;
+            return rule ?? string.Empty;*/
+            return null;
         }
-    */}
+    }
 }

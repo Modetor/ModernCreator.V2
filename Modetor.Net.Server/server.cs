@@ -123,19 +123,28 @@ namespace Modetor.Net.Server
         
         private void ManageClient(TcpClient client)
         {
+            string content = null;
             byte[] b_data = new byte[client.Available];
-            client.GetStream().Read(b_data, 0, b_data.Length);
-            string content = System.Text.Encoding.UTF8.GetString(b_data);
+            if (client.GetStream().DataAvailable) { client.GetStream().Read(b_data, 0, b_data.Length); content = System.Text.Encoding.UTF8.GetString(b_data); }
+            else content = "failed to read header";
+             
             HeaderKeys hk = HeaderKeys.From(content);
-            if (Settings.ConnectionsHandler != null)
+            Console.WriteLine("HK-Target= {0}, Address:{1}",hk.GetValue("target"), client.Client.RemoteEndPoint.ToString());
+            string actual_file = null;
+            PathResolver.Resolve(hk.GetValue("target"), hk.GetValue("referrer") ?? string.Empty, out actual_file);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(HeaderKeys.GenerateJSON(hk.GetCollection()));
+            Console.ResetColor();
+            /*if (Settings.ConnectionsHandler != null)
             {
                 IronPythonObject connection_handler = IronPythonObject.GetObject(Settings.ConnectionsHandler);
                 connection_handler.DefaultSearchPaths[0] = Directory.GetParent(Settings.ConnectionsHandler).FullName;
-
+                IronPythonObject.SetupScope(connection_handler.Scope, client, hk);
+                connection_handler.Scope.RequestedFile = actual_file;
                 string result = connection_handler.Run();
                 if(result != null) // An error occurred...
                 {
-                    Logger.Log(result, System.Environment.StackTrace);
+                    Logger.Log(result, Environment.StackTrace);
                     Logger.PrintError("[Server][ConnectionHandler] : "+result);
                 }
             }
@@ -143,7 +152,9 @@ namespace Modetor.Net.Server
             {
                 Console.WriteLine("is null");
             }
-
+            */
+            client.GetStream().Write(System.Text.Encoding.UTF8.GetBytes("<b>" + content + "</b>"));
+            client.GetStream().Flush();
             if (client.Connected)
                 client.Close();
         }

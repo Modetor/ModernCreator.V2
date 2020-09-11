@@ -114,13 +114,10 @@ namespace Modetor.Net.Server
                 { dic.Add(kv[0], kv[1]);}
             }
 
-            /*
-            if (dic["target"].Trim().Equals("/"))
+            
+            if (dic["target"].Trim().Equals("/") || dic["target"].Trim()[0] == '/')
                 dic["target"] = string.Empty;
-            else if (dic["target"].Trim()[0] == '/')
-                dic["target"] = dic["target"].Substring(1).Trim();
-
-            dic["target"] = dic["target"].Replace('/', System.IO.Path.DirectorySeparatorChar);*/
+            dic["target"] = dic["target"].Replace('/', System.IO.Path.DirectorySeparatorChar);
 
 
         }

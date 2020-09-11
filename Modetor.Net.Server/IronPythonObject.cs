@@ -65,7 +65,7 @@
                 client.GetStream().Flush();
             });
             Scope.Close = new System.Action(() => client.Close());
-            Scope.
+            //Scope.
         }
     }
 }
