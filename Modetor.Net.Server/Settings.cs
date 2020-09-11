@@ -34,7 +34,8 @@ namespace Modetor.Net.Server
                             string ruleFile = ResourcePath+ $"{repositoryRule}{System.IO.Path.DirectorySeparatorChar}.rules";
                             if (!System.IO.File.Exists(ruleFile))
                             {
-                                ErrorLogger.Print("[Settings] : Repository '"+repositoryRule+"' has no .rules file which might cause issues");
+                                ErrorLogger.Print("[Settings] : Repository '"+repositoryRule+"' has no .rules file which might cause issues, using default settings as fallback soluion");
+                                RepositoriesRules.Add(repositoryRule, new Rule(repositoryRule));
                                 continue;
                             }
                             AppendRule(repositoryRule, ruleFile);
@@ -58,11 +59,17 @@ namespace Modetor.Net.Server
                     {
                         if (parts[1].Equals("*"))
                             ConnectionsHandlerRepositories = Repositories;
-                        else if(parts[1].Equals(string.Empty) || !Repositories.Contains(parts[1]))
+                        else if(parts[1].Equals(string.Empty))
                         {
                             ErrorLogger.Print("[Settings] : Value error in settings.ini at line '" + line + "'. value expected to be repo,repo1,repo2... or *");
                             return false;
                         }
+                        else if (!Repositories.Contains(parts[1]))
+                        {
+                            ErrorLogger.Print("[Settings] : Value error in settings.ini at line '" + line + "'. unknown repository '"+parts[1]+"'");
+                            return false;
+                        }
+                        
                         else
                         {
                             ConnectionsHandlerRepositories = parts[1].Split(',');
@@ -74,15 +81,19 @@ namespace Modetor.Net.Server
                         ConnectionsHandler = BasePath + FilePath.Build(parts[1]);
                     else if (parts[0].StartsWith("main-page"))
                         MainPage = BasePath + FilePath.Build(parts[1]);
-
-                    //
+                    else if (parts[0].StartsWith("fnf-page"))
+                        FileNotFoundPage = BasePath + FilePath.Build(parts[1]);
                 }
                 if(MainPage == null)
                 {
                     ErrorLogger.Print("[Settings] : settings.ini must contains main-page property");
                     return false;
                 }
-                //Console.WriteLine(System.IO.File.Exists(ConnectionsHandler));
+                if (FileNotFoundPage == null)
+                {
+                    ErrorLogger.Print("[Settings] : settings.ini must contains fnf-page property");
+                    return false;
+                }
                 return true;
             }
             catch (Exception exp)
@@ -95,7 +106,7 @@ namespace Modetor.Net.Server
 
         private static void AppendRule(string repositoryRule, string ruleFile)
         {
-            Rule rule = new Rule();
+            Rule rule = new Rule(repositoryRule);
             foreach (string line in System.IO.File.ReadLines(ruleFile))
             {
                 if (line == null || line.Equals(string.Empty) || !line.Contains(':')) continue;
@@ -134,6 +145,7 @@ namespace Modetor.Net.Server
         public static string ConnectionsHandler { get; private set; } = null;
         public static string[] ConnectionsHandlerRepositories { get; private set; } = null;
         public static string MainPage { get; private set; } = null;
+        public static string FileNotFoundPage { get; private set; } = null;
 
         /**\
         **** 
@@ -151,12 +163,19 @@ namespace Modetor.Net.Server
 
     public struct Rule
     {
+        public Rule(string name)
+        {
+            Available = true; Name = name; HomeFile = Settings.MainPage; FNFFile = Settings.FileNotFoundPage;
+        }
         public void SetName(string n) => Name = n;
         public void SetHome(string h) => HomeFile = h;
         public void SetFNF(string fnf) => FNFFile = fnf;
+        public void SetAvailable(bool state) => Available = state;
+
         public string Name { get; private set; } 
         public string HomeFile { get; private set; } 
         public string FNFFile { get; private set; }
+        public bool Available { get; private set; }
     }
 
     public static class FilePath

@@ -115,8 +115,11 @@ namespace Modetor.Net.Server
             }
 
             
-            if (dic["target"].Trim().Equals("/") || dic["target"].Trim()[0] == '/')
+            if (dic["target"].Trim().Equals("/"))
                 dic["target"] = string.Empty;
+            else if (dic["target"].Trim()[0] == '/')
+                dic["target"] = dic["target"].Substring(1).Trim();
+
             dic["target"] = dic["target"].Replace('/', System.IO.Path.DirectorySeparatorChar);
 
 

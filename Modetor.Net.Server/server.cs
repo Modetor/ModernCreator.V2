@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using IronPython.Runtime;
@@ -60,7 +61,6 @@ namespace Modetor.Net.Server
                                                             SingleThreadedServer();
                                                             break;
                                                         case 1:
-                                                            Console.WriteLine("MTS way...");
                                                             MultiThreadedServer();
                                                             break;
                                                         case 2:
@@ -70,7 +70,8 @@ namespace Modetor.Net.Server
                                                             ActivePipsServer();
                                                             break;
                                                     }
-                                                })
+                                                }
+                                           )
                 {
                     Name = "TcpListener",
                     IsBackground = true,
@@ -123,19 +124,15 @@ namespace Modetor.Net.Server
         
         private void ManageClient(TcpClient client)
         {
-            string content = null;
-            byte[] b_data = new byte[client.Available];
-            if (client.GetStream().DataAvailable) { client.GetStream().Read(b_data, 0, b_data.Length); content = System.Text.Encoding.UTF8.GetString(b_data); }
-            else content = "failed to read header";
-             
+            client.LingerState = new LingerOption(true, 25);
+            //byte[] b_data = new byte[client.Available];
+            string content = ReadContentHeader(client.GetStream());
             HeaderKeys hk = HeaderKeys.From(content);
             Console.WriteLine("HK-Target= {0}, Address:{1}",hk.GetValue("target"), client.Client.RemoteEndPoint.ToString());
-            string actual_file = null;
-            PathResolver.Resolve(hk.GetValue("target"), hk.GetValue("referrer") ?? string.Empty, out actual_file);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(HeaderKeys.GenerateJSON(hk.GetCollection()));
-            Console.ResetColor();
-            /*if (Settings.ConnectionsHandler != null)
+            PathResolver.Resolve(hk.GetValue("target"), hk.GetValue("referrer") ?? string.Empty, out string actual_file);
+            string repoName = PathResolver.GetRepositoryFromHeaderKeys(hk);
+
+            if (Settings.ConnectionsHandler != null && Settings.ConnectionsHandlerRepositories != null && (Settings.ConnectionsHandlerRepositories == Settings.Repositories || Settings.ConnectionsHandlerRepositories.Contains(repoName)))
             {
                 IronPythonObject connection_handler = IronPythonObject.GetObject(Settings.ConnectionsHandler);
                 connection_handler.DefaultSearchPaths[0] = Directory.GetParent(Settings.ConnectionsHandler).FullName;
@@ -150,13 +147,31 @@ namespace Modetor.Net.Server
             }
             else
             {
-                Console.WriteLine("is null");
+                Console.WriteLine("C# Side.. {0}", actual_file);
+                client.GetStream().Write(File.ReadAllBytes(actual_file));
+                client.GetStream().Flush();
             }
-            */
-            client.GetStream().Write(System.Text.Encoding.UTF8.GetBytes("<b>" + content + "</b>"));
-            client.GetStream().Flush();
+            
             if (client.Connected)
                 client.Close();
+        }
+
+        private string ReadContentHeader(NetworkStream networkStream)
+        {
+            byte[] buffer = new byte[1024];
+            System.Text.StringBuilder requestHeader = new System.Text.StringBuilder();
+            int numberOfBytesRead = 0;
+
+            // Incoming message may be larger than the buffer size.
+            do
+            {
+                numberOfBytesRead = networkStream.Read(buffer, 0, buffer.Length);
+
+                requestHeader.AppendFormat(System.Text.Encoding.UTF8.GetString(buffer,0, numberOfBytesRead));
+            }
+            while (networkStream.DataAvailable);
+
+            return requestHeader.ToString();
         }
 
         public void Dispose()

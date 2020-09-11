@@ -41,6 +41,8 @@ namespace Modetor.Net.Server
                     file = Settings.ResourcePath + target;
                 else if(File.Exists(Settings.ResourcePath + target))
                     file = Settings.ResourcePath + target;
+                else if (File.Exists(Settings.RootPath + target))
+                    file = Settings.RootPath + target;
             }
             else
             {
@@ -87,41 +89,41 @@ namespace Modetor.Net.Server
             resultfile = file;
             return File.Exists(path: resultfile);
         }
-        public static string GetRuleFromHeaderKeys(HeaderKeys keys)
-        {/*
+        public static string GetRepositoryFromHeaderKeys(HeaderKeys keys)
+        {
             //__get_rule__(file ?? keys.GetValue("target") ?? keys.GetValue("Referer"));
             string rule = string.Empty;
-            string[] names = conf.GetRules();
+            string[] names = Settings.Repositories;
+            char separator = Path.DirectorySeparatorChar;
             string target = keys.GetValue("target") ?? string.Empty, referrer = keys.GetValue("Referer") ?? string.Empty;
-            target = target.Replace('/', '\\');
+            target = target.Replace('/', separator);
 
-            if (target.Equals("\\"))
+            if (target.Equals(separator))
                 target = string.Empty;
 
-            if (target.StartsWith("\\"))
+            if (target.StartsWith(separator))
                 target = target.Substring(1);
 
-            if (target.EndsWith("\\"))
+            if (target.EndsWith(separator))
                 target = target.Substring(0, target.Length - 1);
 
-            if(names.Contains(target.Split('\\')[0])) {
+            if(names.Contains(target.Split(separator)[0])) {
                 rule = target.Split('\\')[0];
-                if (!conf.Rules[rule].Available) rule = string.Empty;
+                if (!Settings.RepositoriesRules[rule].Available) rule = string.Empty;
             }
             referrer = referrer.Replace("http://"+keys.GetValue("Host"), string.Empty);
-            referrer = referrer.Replace('/', '\\');
-            if (referrer.StartsWith("\\"))
+            referrer = referrer.Replace('/', separator);
+            if (referrer.StartsWith(separator))
                 referrer = referrer.Substring(1);
 
-            if (referrer.EndsWith("\\"))
+            if (referrer.EndsWith(separator))
                 referrer = referrer.Substring(0, referrer.Length - 1);
 
-            if(names.Contains(referrer.Split('\\')[0])) {
-                rule = referrer.Split('\\')[0];
-                if (!conf.Repositories[rule].Available) rule = string.Empty;
+            if(names.Contains(referrer.Split(separator)[0])) {
+                rule = referrer.Split(separator)[0];
+                if (!Settings.RepositoriesRules[rule].Available) rule = string.Empty;
             }
-            return rule ?? string.Empty;*/
-            return null;
+            return rule ?? string.Empty;
         }
     }
 }
