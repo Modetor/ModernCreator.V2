@@ -8,7 +8,7 @@ With help of it's built-in ``runtime-reconfig`` made it more brilliant.
 for example, you can customize:
 
 
-**Main Settings **
+**Main Settings**
 
 
 **main-page**: root/home.html ``; main page. it can be python source code``
@@ -29,7 +29,7 @@ for example, you can customize:
 
 
 
-**Threading settings **
+**Threading settings**
 
 **thread-mechanism**: 0,1,2 ``; 0 means signle thread, 1 means multithread and 2 means multithread with queues (called Active Pips)``
 
