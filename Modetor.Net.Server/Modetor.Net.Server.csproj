@@ -1,11 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+   
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
+	  <RuntimeIdentifiers>win-x64;win-x86;</RuntimeIdentifiers>
+	  <SignAssembly>false</SignAssembly>
+	  <AssemblyOriginatorKeyFile>x.snk</AssemblyOriginatorKeyFile>
+	  <DelaySign>false</DelaySign>
+	  <Company>Modetor</Company>
+	  <Authors>Mohammad s. Albay</Authors>
+	  <Product>Modetor.V2 Server</Product>
+  </PropertyGroup>
+   
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+   
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="IronPython" Version="2.7.10" />
+    <PackageReference Include="ChakraCore.NET" Version="1.3.3" />
+    <PackageReference Include="HttpMultipartParser" Version="5.0.0" />
+    <PackageReference Include="IronPython" Version="2.7.11" />
+    <PackageReference Include="MySql.Data" Version="8.0.23" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\Data\Firebase\Firebase\bin\Release\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+    
 </Project>

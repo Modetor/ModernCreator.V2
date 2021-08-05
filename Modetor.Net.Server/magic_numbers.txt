@@ -1,0 +1,1 @@
+﻿0x011000  : when trying to return to 404 error request, a null value retured !

@@ -1,0 +1,71 @@
+﻿<Window x:Class="ModernCreator_Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="1.5,1.5,1.5,1.5" CaptionHeight="32"  ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" />
+
+    </WindowChrome.WindowChrome>
+    <Border x:Name="WindowBorder" BorderThickness="0.5" BorderBrush="{Binding Source={x:Static SystemParameters.WindowGlassBrush}}">
+        <Grid>
+            <Grid x:Name="Titlebar" Height="32" VerticalAlignment="Top" Background="{StaticResource TitlebarBackgroundBrush}" Margin="0.3,0.3,0.3,0">
+                <Grid Width="auto" HorizontalAlignment="Right" FlowDirection="LeftToRight">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <Label x:Name="MaximizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MaximizeEvent"  ToolTip="Maximize" Grid.Column="1" Content="&#xE740;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                    <Label x:Name="MinimizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MinimizeEvent"  ToolTip="Minimize" Grid.Column="0" Content="&#xE738;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                    <Label x:Name="CloseButton" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="CloseEvent"     ToolTip="Close"    Grid.Column="2" Content="&#xE711;" Foreground="Red"   HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                </Grid>
+                <Label Style="{StaticResource centered-appname}" />
+                <Grid Width="auto" HorizontalAlignment="Left" FlowDirection="LeftToRight">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label x:Name="x2" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="CloseEvent"  FontSize="20" ToolTip="Close"    Grid.Column="0" Content="&#xE712;" Foreground="Black"   HorizontalAlignment="left" />
+                    <Label x:Name="xx2" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="Button_PreviewMouseUp"   FontSize="20" ToolTip="Close"    Grid.Column="1" Content="&#xE712;" Foreground="Green"   HorizontalAlignment="left" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                </Grid>
+            </Grid>
+
+            <DockPanel Margin="0,32,0,0">
+                <!--<DockPanel  DockPanel.Dock="Top">
+                    <Button x:Name="ButtonGo" DockPanel.Dock="Right" Click="ButtonGo_Click" Content="Go"/>
+                    <TextBox Name = "addressBar" />
+                </DockPanel> -->
+                <wv2:WebView2  Name = "webView" 
+                               AllowDrop="False" 
+                               Visibility="visible" />
+                <!--Source = "https://www.microsoft.com" PreviewDragEnter="WebView_PreviewDragEnter"   -->
+                <!-- <Label Name="loading_label"  Content="جاري الإعداد..." Width="100"  FlowDirection="RightToLeft" FontSize="15" ></Label>-->
+                
+            </DockPanel>
+            
+            <!--
+            
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top">
+                    <Button x:Name="ButtonGo" DockPanel.Dock="Right" Click="ButtonGo_Click" Content="Go"/>
+                    <TextBox Name = "addressBar"/>
+                </DockPanel>
+                <wv2:WebView2 Name = "webView"
+                          AllowDrop="False"
+                          PreviewDragEnter="WebView_PreviewDragEnter"   
+                  Source = "https://www.microsoft.com"
+    />
+            </DockPanel>
+            
+            -->
+        </Grid>
+    </Border>
+
+</Window>

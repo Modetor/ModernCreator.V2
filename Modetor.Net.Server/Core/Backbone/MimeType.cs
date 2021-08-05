@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Modetor.Net.Server
+namespace Modetor.Net.Server.Core.Backbone
 {
-    class MimeType
+    public class MimeType
     {
         /// <summary>
         ///  Took from StackOverFlow :)
@@ -598,7 +598,11 @@ namespace Modetor.Net.Server
         }
         public static string GetExtension(string file)
         {
-            if (file == null) return "unknown";
+            if (file == null)
+            {
+                return "unknown";
+            }
+
             string[] temp = file.Split('.');
             return temp[temp.Length - 1];
         }

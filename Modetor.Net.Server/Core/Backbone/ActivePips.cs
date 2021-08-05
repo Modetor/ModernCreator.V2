@@ -20,7 +20,7 @@ namespace Modetor.Net.Server
                 Busy[i] = false;
                 Queues[i] = new Queue<Action>();
                 Lockers[i] = new ManualResetEventSlim(false);
-                Threads[i] = new Thread(Consume) { IsBackground = true, Name = i.ToString(), Priority = ThreadPriority.BelowNormal };
+                Threads[i] = new Thread(Consume) { IsBackground = true, Name = i.ToString(), Priority = ThreadPriority.Lowest };
                 Threads[i].Start();
             }
         }
@@ -28,27 +28,41 @@ namespace Modetor.Net.Server
 
         private void Consume()
         {
-            int ID = Convert.ToInt32(Thread.CurrentThread.Name);
-            while (KeepAlive)
+            try
             {
-                while (Queues[ID].Count == 0 && KeepAlive) { /*if(Configuration.DEBUG_MODE) Console.WriteLine("I [ActivePips] : Thread[{0}] - Moving to wait mode", ID);*/ Lockers[ID].Wait(); }
-
-                Busy[ID] = true;
-                
-                for (int i = 0; i < Queues[ID].Count; i++)
+                int ID = Convert.ToInt32(Thread.CurrentThread.Name);
+                while (KeepAlive)
                 {
-                    if (KeepAlive)
-                        Queues[ID].Dequeue().Invoke();
-                    else break;
+                    //while (Queues[ID].Count == 0 && KeepAlive) { Lockers[ID].Wait(); }
+                    if (Queues[ID].Count == 0)
+                    {
+                        Lockers[ID].Reset();
+                        Lockers[ID].Wait();
+                    }
+
+                    Busy[ID] = Queues[ID].Count > 2;
+
+                    for (int i = 0; i < Queues[ID].Count; i++)
+                    {
+                        if (KeepAlive)
+                            Queues[ID].Dequeue().Invoke();
+                        else
+                            break;
+                    }
+                    Lockers[ID].Reset();
+                    Busy[ID] = false;
                 }
-                Lockers[ID].Reset();
-                Busy[ID] = false;
-                /*if (Configuration.DEBUG_MODE) Console.WriteLine("I [ActivePips] : Thread[{0}] - No Processes left", ID);*/
             }
+            catch (Exception exp)
+            {
+                Core.Backbone.ErrorLogger.WithTrace(string.Format("[Fatel][Server error => Consume()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), typeof(ActivePips));
+            }
+            
         }
 
         public void AddWork(Action act)
         {
+            
             bool signaled = false;
             for (int i = 0; i < ThreadsCount; i++)
             {
@@ -69,14 +83,13 @@ namespace Modetor.Net.Server
                 /* if (Configuration.DEBUG_MODE) Console.WriteLine("I [ActivePips] : Thread[{0}] - +1 Process in queue (randomly picked)", rnd);*/
                 Queues[rnd].Enqueue(act);
                 Lockers[rnd].Set();
-                
-                
             }
         }
         [Obsolete("Warning: This method puts the work on random threads. This method isn't deprecated!",false)]
         public void AddWorkToThread(uint ID, Action act)
         {
-            if(ID >= ThreadsCount) { throw new IndexOutOfRangeException($"Thread ID ({ID}) out of range ({ThreadsCount} - 1)"); }
+            if(ID >= ThreadsCount)
+                throw new IndexOutOfRangeException($"Thread ID ({ID}) out of range ({ThreadsCount} - 1)");
             Queues[ID].Enqueue(act);
             Lockers[ID].Set();
         }
@@ -84,13 +97,13 @@ namespace Modetor.Net.Server
         public void Suspend() {
             Suspended = true;
             foreach (ManualResetEventSlim locker in Lockers)
-                locker.Wait();
+                locker.Reset();
         }
         public void Resume()
         {
             Suspended = false;
             foreach (ManualResetEventSlim locker in Lockers)
-                locker.Wait();
+                locker.Set();
         }
         public bool IsSuspended() => Suspended;
         public void ClearWorks()
@@ -100,14 +113,24 @@ namespace Modetor.Net.Server
         }
         public void Kill()
         {
-            KeepAlive = true;
+            KeepAlive = false;
             foreach (Queue<Action> q in Queues)
                 q.Clear();
+
+            foreach (ManualResetEventSlim locker in Lockers)
+                locker.Set();
+
+            for (int i = 0; i < Lockers.Length; i++)
+                Lockers[i].Dispose();
         }
-        private Thread[] Threads;
-        private Queue<Action>[] Queues;
-        private bool[] Busy;
-        private ManualResetEventSlim[] Lockers;
+
+
+
+
+        private readonly Thread[] Threads;
+        private readonly Queue<Action>[] Queues;
+        private readonly bool[] Busy;
+        private readonly ManualResetEventSlim[] Lockers;
         private readonly int ThreadsCount;
         private bool Suspended = false;
         public bool KeepAlive { get; private set; } = true;

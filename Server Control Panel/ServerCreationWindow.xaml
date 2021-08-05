@@ -1,0 +1,17 @@
+﻿<Window x:Class="Server_Control_Panel.ServerCreationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Server_Control_Panel"
+        mc:Ignorable="d"
+        Title="Create new Server" Height="272" Width="269" MaxWidth="269" MaxHeight="450" ResizeMode="NoResize" WindowStyle="SingleBorderWindow" WindowStartupLocation="CenterOwner" Icon="/Resources/icons8_server_48px.png" ShowInTaskbar="False">
+
+    <Grid>
+        <ComboBox x:Name="ips_cbox" Width="180" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,10,0,0" BorderBrush="#FF355DD3" />
+        <TextBox x:Name="port_input" Text="80" Height="30" Width="50" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,10,10,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" BorderBrush="#FF355DD3" />
+        <CheckBox x:Name="manual_toggle" Content="Use manual IP Option" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,50,0,0"/>
+        <TextBox x:Name="manual_input" Text="e.g: 127.0.0.1" Height="30" VerticalAlignment="Top" Margin="10,70,10,0"  BorderBrush="#FF355DD3" VerticalContentAlignment="Center" />
+        <Button x:Name="create_btn" Content="Create" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="87" Height="30" Margin="0,0,0,10" PreviewMouseLeftButtonUp="create_btn_PreviewMouseLeftButtonUp"/>
+    </Grid>
+</Window>

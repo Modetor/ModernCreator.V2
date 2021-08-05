@@ -1,0 +1,54 @@
+﻿<Window x:Class="Server_Control_Panel.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Background="#FFEEEEEE"
+        Title="ModernCreator \ Server Control Panel" Height="500" MaxHeight="500" MinHeight="500" Width="850" MaxWidth="850" MinWidth="850" ResizeMode="CanMinimize" Closing="Window_Closing">
+    <!--<Window.TaskbarItemInfo>
+        <TaskbarItemInfo Description="My Server is beautiful!" ProgressState="Normal" Overlay="/Resources/icons8_add_48px.png" />
+    </Window.TaskbarItemInfo>-->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" Background="#FF262626">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="35"></RowDefinition>
+                <RowDefinition Height="40"></RowDefinition>
+                <RowDefinition Height="40"></RowDefinition>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="33"></ColumnDefinition>
+                <ColumnDefinition Width="33"></ColumnDefinition>
+                <ColumnDefinition Width="33"></ColumnDefinition>
+                <ColumnDefinition Width="33"></ColumnDefinition>
+                <ColumnDefinition Width="34"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <ComboBox x:Name="ls_ips" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" Background="#FFE5E5E5" Margin="10,0,10,5" SelectionChanged="ls_ips_SelectionChanged" Height="25" VerticalAlignment="Bottom"></ComboBox>
+            <Image x:Name="refresh_ips_btn" Grid.Row="1" Grid.Column="3" 
+                    Source="/Resources/icons8_sync_48px_1.png" PreviewMouseLeftButtonUp="refresh_ips_btn_PreviewMouseLeftButtonUp" Cursor="Hand"/>
+            <Image x:Name="add_server_btn" Grid.Row="1" Grid.Column="0" 
+                    Source="/Resources/icons8_add_48px.png" PreviewMouseLeftButtonUp="add_server_btn_PreviewMouseLeftButtonUp" Cursor="Hand" />
+            <Image x:Name="server_ctrl_btn" Grid.Row="1" Grid.Column="1" 
+                    Source="/Resources/icons8_Circled_Play_48px.png"  PreviewMouseLeftButtonUp="Image_PreviewMouseLeftButtonUp" Cursor="No" />
+            <Image x:Name="kill_server_btn" Grid.Row="1" Grid.Column="2" 
+                    Source="/Resources/icons8_cancel_48px.png"  PreviewMouseLeftButtonUp="kill_server_btn_PreviewMouseLeftButtonUp" Cursor="No"/>
+            <CheckBox x:Name="apply_to_all_btn" Grid.Row="1" Grid.Column="4" FontSize="13"
+                      Grid.ColumnSpan="5" HorizontalAlignment="Right" 
+                      Foreground="WhiteSmoke" Content="Apply to all" 
+                      Margin="0,13,5,0" Cursor="Hand" ></CheckBox>
+
+        </Grid>
+        <Grid Grid.Column="1">
+            <Label Grid.Column="1">Hi!</Label>
+        </Grid>
+
+    </Grid>
+</Window>

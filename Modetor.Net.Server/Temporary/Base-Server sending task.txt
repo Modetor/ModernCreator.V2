@@ -1,0 +1,55 @@
+﻿await System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        if (Rule.Corrupted.Equals(req.Repository))
+                        {
+
+                            HttpRespondHeader header = new HttpRespondHeader();
+                            header.SetState(req.HttpVersion, HttpRespondState.NOT_FOUND);
+                            header.SetBody("TARGET NOT FOUND - " + req.RequestedTarget);
+                            await stream.WriteAsync(header.Build());
+
+                        }
+                        else
+                        {
+
+                            if (req.Repository.HasConnectionHandler)
+                            {
+                                PythonRunner.Run(req, new HttpRespondHeader(), true);
+                            }
+                            else
+                            {
+                                HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
+                                if (!res.DidRespond())
+                                {
+                                    await stream.WriteAsync(res.Build());
+                                    await stream.FlushAsync();
+                                }
+                            }
+
+                        }
+                    })
+                    .ContinueWith(t =>
+                    {
+                        if (req.HasUploadedFiles)
+                            req.DeleteUploadFiles();
+
+                        if (client.Connected && !req.Repository.HasConnectionHandler)
+                            client.Close();
+                    }).ConfigureAwait(false);
+
+
+
+
+
+
+
+
+
+
+
+
+await System.Threading.Tasks.Task.Run(async () =>
+                     {
+                         
+                     })
+                        .ContinueWith(t => client.Close()).ConfigureAwait(false);
