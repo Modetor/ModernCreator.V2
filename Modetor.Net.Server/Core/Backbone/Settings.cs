@@ -25,8 +25,8 @@ namespace Modetor.Net.Server.Core.Backbone
             SourcePath = PathResolver.Build((string)p.Source);
             if (!SourcePath[SourcePath.Length - 1].Equals(System.IO.Path.DirectorySeparatorChar))
                 SourcePath += System.IO.Path.DirectorySeparatorChar;
-            SettingsFilePath = SourcePath + FilePath.Build("base", "settings.json");
-            BasePath = SourcePath + $"base{System.IO.Path.DirectorySeparatorChar}";
+            SettingsFilePath = SourcePath + FilePath.Build("root", "settings.json");
+            BasePath = SourcePath;// + $"base{System.IO.Path.DirectorySeparatorChar}";
             RootPath = BasePath + $"root{System.IO.Path.DirectorySeparatorChar}";
             ResourcePath = BasePath + $"res{System.IO.Path.DirectorySeparatorChar}";
             FeatureSetPath = p.FeaturesSet == null ? null : (string)p.FeaturesSet;
@@ -165,9 +165,7 @@ namespace Modetor.Net.Server.Core.Backbone
                 if((bool)Current.AllowSocketControlFlow && Current.SocketControlFlow != null)
                 {
                     if (SocketControlFlow.Count > 0)
-                    {
                         SocketControlFlow.Clear();
-                    }
 
                     foreach (dynamic item in Current.SocketControlFlow)
                     {
@@ -181,6 +179,26 @@ namespace Modetor.Net.Server.Core.Backbone
                         {
                             SocketControlFlow.Add(controlFlow);
                         }
+                    }
+                }
+
+                if((bool)Current.EnableVirtualLinks && Current.VirtualLinks != null)
+                {
+                    if (VirtualLinks.Count > 0)
+                        VirtualLinks.Clear();
+
+                    foreach (dynamic vlink in Current.VirtualLinks)
+                    {
+                        if ((bool)vlink.Dupricated)
+                            continue;
+
+
+                        VirtualLinks virtualLink = new();
+                        virtualLink.Enabled = (bool)vlink.Enabled;
+                        virtualLink.Link = (string)vlink.Link;
+                        virtualLink.Target = (string)vlink.Target;
+
+                        VirtualLinks.Add(virtualLink.Link, virtualLink);
                     }
                 }
 
@@ -204,6 +222,11 @@ namespace Modetor.Net.Server.Core.Backbone
 
                 IsReady = false;
             }
+        }
+
+        public string Serialize()
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(Current, Newtonsoft.Json.Formatting.Indented);
         }
 
         private void AppendRule(string repositoryRule, string ruleFile)
@@ -318,11 +341,11 @@ namespace Modetor.Net.Server.Core.Backbone
         public bool IsReady = false;
         public dynamic Current = null;
         public string[] Repositories => RepositoriesRules.Keys.ToArray();
-        public System.Collections.Generic.Dictionary<string, Rule> RepositoriesRules = new System.Collections.Generic.Dictionary<string, Rule>();
+        public System.Collections.Generic.Dictionary<string, Rule> RepositoriesRules = new();
         public bool GetRepositoryByPath(string path, out Rule rule)
         {
-            
-            foreach (System.Collections.Generic.KeyValuePair< string, Rule> item in RepositoriesRules)
+
+            foreach (System.Collections.Generic.KeyValuePair<string, Rule> item in RepositoriesRules)
             {
                 if (path.StartsWith(item.Value.Path))
                 {
@@ -330,18 +353,19 @@ namespace Modetor.Net.Server.Core.Backbone
                     return true;
                 }
             }
-
-            rule = Rule.Corrupted;
-            return false;
+            
+            rule = path.Contains(RootPath) ? Rule.Root : Rule.Corrupted;
+            return rule.Equals(Rule.Root);
         }
-        public System.Collections.Generic.List<SocketControlFlow> SocketControlFlow = new System.Collections.Generic.List<SocketControlFlow>();
-        //public 
+        public System.Collections.Generic.List<SocketControlFlow> SocketControlFlow = new();
+        public System.Collections.Generic.Dictionary<string, VirtualLinks> VirtualLinks = new();
+        
+
         /**\
         **** 
         ****  Readonly Static members
         ****
         \**/
-
         public static string SettingsFilePath;// = SourcePath + FilePath.Build("base", "settings.json");
         public static string BasePath;// = SourcePath + $"base{System.IO.Path.DirectorySeparatorChar}";
         public static string RootPath;// = BasePath + $"root{System.IO.Path.DirectorySeparatorChar}";
@@ -351,6 +375,11 @@ namespace Modetor.Net.Server.Core.Backbone
     }
 
 
+    public struct VirtualLinks
+    {
+        public bool Enabled;
+        public string Link, Target;
+    }
 
     public struct SocketControlFlow
     {

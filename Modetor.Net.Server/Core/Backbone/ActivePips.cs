@@ -7,7 +7,6 @@ namespace Modetor.Net.Server
     class ActivePips
     {
         
-
         public ActivePips(int numberOfThreads)
         {
             ThreadsCount = numberOfThreads;
@@ -36,8 +35,8 @@ namespace Modetor.Net.Server
                     //while (Queues[ID].Count == 0 && KeepAlive) { Lockers[ID].Wait(); }
                     if (Queues[ID].Count == 0)
                     {
-                        Lockers[ID].Reset();
-                        Lockers[ID].Wait();
+                        Lockers[ID]?.Reset();
+                        Lockers[ID]?.Wait();
                     }
 
                     Busy[ID] = Queues[ID].Count > 2;
@@ -49,8 +48,9 @@ namespace Modetor.Net.Server
                         else
                             break;
                     }
-                    Lockers[ID].Reset();
                     Busy[ID] = false;
+                    Lockers[ID]?.Reset();
+                    
                 }
             }
             catch (Exception exp)
@@ -70,7 +70,7 @@ namespace Modetor.Net.Server
                 {
                     /*if (Configuration.DEBUG_MODE) Console.WriteLine("I [ActivePips] : Thread[{0}] - +1 Process in queue ", i);*/
                     Queues[i].Enqueue(act);
-                    Lockers[i].Set();
+                    Lockers[i]?.Set();
                     
                     signaled = true;
                     break;
@@ -82,7 +82,7 @@ namespace Modetor.Net.Server
                 int rnd = new Random().Next(0, ThreadsCount - 1);
                 /* if (Configuration.DEBUG_MODE) Console.WriteLine("I [ActivePips] : Thread[{0}] - +1 Process in queue (randomly picked)", rnd);*/
                 Queues[rnd].Enqueue(act);
-                Lockers[rnd].Set();
+                Lockers[rnd]?.Set();
             }
         }
         [Obsolete("Warning: This method puts the work on random threads. This method isn't deprecated!",false)]
@@ -97,19 +97,19 @@ namespace Modetor.Net.Server
         public void Suspend() {
             Suspended = true;
             foreach (ManualResetEventSlim locker in Lockers)
-                locker.Reset();
+                locker?.Reset();
         }
         public void Resume()
         {
             Suspended = false;
             foreach (ManualResetEventSlim locker in Lockers)
-                locker.Set();
+                locker?.Set();
         }
         public bool IsSuspended() => Suspended;
         public void ClearWorks()
         {
             foreach (Queue<Action> q in Queues)
-                q.Clear();
+                q?.Clear();
         }
         public void Kill()
         {
@@ -118,10 +118,10 @@ namespace Modetor.Net.Server
                 q.Clear();
 
             foreach (ManualResetEventSlim locker in Lockers)
-                locker.Set();
+                locker?.Set();
 
             for (int i = 0; i < Lockers.Length; i++)
-                Lockers[i].Dispose();
+                Lockers[i]?.Dispose();
         }
 
 
@@ -131,7 +131,7 @@ namespace Modetor.Net.Server
         private readonly Queue<Action>[] Queues;
         private readonly bool[] Busy;
         private readonly ManualResetEventSlim[] Lockers;
-        private readonly int ThreadsCount;
+        public readonly int ThreadsCount;
         private bool Suspended = false;
         public bool KeepAlive { get; private set; } = true;
 

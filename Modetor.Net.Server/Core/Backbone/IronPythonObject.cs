@@ -10,7 +10,7 @@ namespace Modetor.Net.Server.Core.Backbone
     class IronPythonObject
     {
 
-
+        
 
 
         public static IronPythonObject GetObject(string file) => new IronPythonObject(file);
@@ -145,9 +145,11 @@ namespace Modetor.Net.Server.Core.Backbone
                     (buffer, offest, length) => Scope.Stream?.Read(buffer, offest, length));
                 Scope.Close = new Action(() => client?.Close());
                 Scope.IsClientConnected = new Func<bool>(() => client.IsConnected());
-
+                //string address = client.Client.RemoteEndPoint.ToString();
+                //Scope.Address = address;
+                //Scope.AddressParts = address.Split(':');
             }
-
+            
             Scope.AutoClose = false;
             Scope.ReadFileBytes = new Func<string, byte[]>(f => {
                 try
@@ -246,7 +248,9 @@ namespace Modetor.Net.Server.Core.Backbone
             Scope.Intent = new Action<string, string>((relative_path, parameters) => Scope.IntentForResult(relative_path, parameters));
             Scope.URLEncode = new Func<string, string>((s) => System.Web.HttpUtility.UrlEncode(s));
             Scope.URLDecode = new Func<string, string>((s) => System.Web.HttpUtility.UrlDecode(s));
-
+            Scope.EscapeData = new Func<string, string>(s => Uri.EscapeDataString(s));
+            Scope.UnescapeData = new Func<string, string>(s => Uri.UnescapeDataString(s));
+            
             Action<string, string, bool> action = new((relative_path, parameters, removeAble) =>
             {
                 string referer = string.Empty;
@@ -283,7 +287,44 @@ namespace Modetor.Net.Server.Core.Backbone
             Scope.PushToWorkLoop = new Action<string, string>((relative_path, parameters) => action(relative_path, parameters, false));
             Scope.PushToWorkOnce = new Action<string, string>((relative_path, parameters) => action(relative_path, parameters, true));
 
+            Scope.MoveFile = new Func<string, string, bool>((o, n) => {
+                try { System.IO.File.Move(o, n); return true; }
+                catch { return false; }
+            });
+            Scope.CreateDirectory = new Func<string, bool>(dir => {
+                try { System.IO.Directory.CreateDirectory(dir); return true; }
+                catch { return false; }
+            });
+            Scope.AcceptUploadedFile = new Func<string, bool, string>((p, r) => {
+                string result;
+                string[] parts = p.Split(';');
+                string oldPath = parts[1];
+                if (!r)
+                    result = parts[1].Replace(".temp", string.Empty);
+                else
+                {
+                    Index i1 = parts[1].LastIndexOf(System.IO.Path.DirectorySeparatorChar) + 1;
+                    result = parts[1][..i1] + parts[0];
+                }
 
+                return Scope.MoveFile(oldPath, result) ?
+                                result : null;
+            });
+
+            Scope.Log = new Action<string>(s => {
+                ErrorLogger.WithTrace(Settings, string.Format("[Log][Backend Script => {0}] : hosted-script-message : {1}\n", req.RequestedFileName ?? "{Script src}",s), typeof(PythonRunner));
+            });
+            Scope.Logw = new Action<string>(s => {
+                ErrorLogger.WithTrace(Settings, string.Format("[Warn][Backend Script => {0}] : hosted-script-message : {1}\n", req.RequestedFileName ?? "{Script src}", s), typeof(PythonRunner));
+            });
+            Scope.Loge = new Action<string>(s => {
+                ErrorLogger.WithTrace(Settings, string.Format("[Error][Backend Script => {0}] : hosted-script-message : {1}\n", req.RequestedFileName ?? "{Script src}", s), typeof(PythonRunner));
+            });
+            Scope.Logi = new Action<string>(s => {
+                ErrorLogger.WithTrace(Settings, string.Format("[Info][Backend Script => {0}] : hosted-script-message : {1}\n", req.RequestedFileName ?? "{Script src}", s), typeof(PythonRunner));
+            });
+            Scope.SystemPlatform = Environment.OSVersion.Platform.ToString();
+            
         }
 
 
@@ -301,6 +342,7 @@ namespace Modetor.Net.Server.Core.Backbone
 
     public static class PythonRunner
     {
+        private static readonly string DefaultErrorStatement = "Oops. Error occurred while processing your request!";
         private static readonly System.Reflection.Assembly CurrentAssembly = System.Reflection.Assembly.GetExecutingAssembly(),
                                                            MySqlAssembly = System.Reflection.Assembly.GetAssembly(typeof(MySql.Data.MySqlClient.MySqlConnection));
 
@@ -333,11 +375,8 @@ namespace Modetor.Net.Server.Core.Backbone
             try { py.Run(); }
             catch(Exception exp)
             {
-                Microsoft.Scripting.Hosting.ExceptionOperations eo = py.Engine.GetService<Microsoft.Scripting.Hosting.ExceptionOperations>();
-                string error = eo.FormatException(exp);
-
-                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : py.Scope.RequestResult;
-
+                string error = HandleError(py, exp, true);
+                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : DefaultErrorStatement;
                 ErrorLogger.WithTrace(reqh.Server.Settings, string.Format("[Fatel][Backend error => Run()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
             }
 
@@ -364,6 +403,14 @@ namespace Modetor.Net.Server.Core.Backbone
                 return null;
         }
 
+        private static string HandleError(IronPythonObject py, Exception exp, bool redirectErrors)
+        {
+            Microsoft.Scripting.Hosting.ExceptionOperations eo = py.Engine.GetService<Microsoft.Scripting.Hosting.ExceptionOperations>();
+            string error = eo.FormatException(exp);
+
+            return redirectErrors ? error : DefaultErrorStatement;
+        }
+
         public static void SpecialRun(HttpRequestHeader reqh, HttpRespondHeader resh, string file)
         {
             IronPythonObject py = new(file);
@@ -381,16 +428,13 @@ namespace Modetor.Net.Server.Core.Backbone
 
             py.AddAndSetCurrentPath(parentFolder);
 
-
             IronPythonObject.SetupScope(py.Scope, reqh.Client, reqh.Server.Settings,reqh);
 
             try { py.Run(); }
             catch (Exception exp)
             {
-                Microsoft.Scripting.Hosting.ExceptionOperations eo = py.Engine.GetService<Microsoft.Scripting.Hosting.ExceptionOperations>();
-                string error = eo.FormatException(exp);
-
-                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : py.Scope.RequestResult;
+                string error = HandleError(py, exp, true);
+                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : DefaultErrorStatement;
 
                 ErrorLogger.WithTrace(reqh.Server.Settings, string.Format("[Fatel][Backend error => SpecialRun()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
             }
@@ -413,14 +457,10 @@ namespace Modetor.Net.Server.Core.Backbone
             py.Engine.Runtime.Globals.SetVariable("Repository", req.Repository);
             py.Engine.Runtime.LoadAssembly(CurrentAssembly);
 
-            
-
             py.AddAndSetCurrentPath(parentFolder);
 
 
             IronPythonObject.SetupScope(py.Scope, req.Client, req.Server.Settings,req);
-
-            
 
             return py;
         }
@@ -439,7 +479,6 @@ namespace Modetor.Net.Server.Core.Backbone
                 ErrorLogger.WithTrace(py.Engine.Runtime.Globals.GetVariable("RequestHandler").Server.Settings, string.Format("[Fatel][Backend error => WebsocketRun()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
             }
         }
-
         public static void ServerEventRun(HttpRequestHeader reqh)
         {
             IronPythonObject py = new(reqh.AbsoluteFilePath);
@@ -463,17 +502,14 @@ namespace Modetor.Net.Server.Core.Backbone
             try { py.Run(); }
             catch (Exception exp)
             {
-                Microsoft.Scripting.Hosting.ExceptionOperations eo = py.Engine.GetService<Microsoft.Scripting.Hosting.ExceptionOperations>();
-                string error = eo.FormatException(exp);
+                string error = HandleError(py, exp, true);
+                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : DefaultErrorStatement;
 
-                py.Scope.RequestResult = (bool)reqh.Server.Settings.Current.RedirectErrors ? error : py.Scope.RequestResult;
-
-                ErrorLogger.WithTrace(reqh.Server.Settings, string.Format("[Fatel][Backend error => SpecialRun()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
+                ErrorLogger.WithTrace(reqh.Server.Settings, string.Format("[Fatel][Backend error => ServerEventRun()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
             }
 
         }
-
-        internal static void RunStartups(BaseServer baseServer, Rule repo)
+        public static void RunStartups(BaseServer baseServer, Rule repo)
         {
             IronPythonObject py = new(repo.StartupFile);
 
@@ -496,14 +532,12 @@ namespace Modetor.Net.Server.Core.Backbone
             try { py.Run(); }
             catch (Exception exp)
             {
-                Microsoft.Scripting.Hosting.ExceptionOperations eo = py.Engine.GetService<Microsoft.Scripting.Hosting.ExceptionOperations>();
-                string error = eo.FormatException(exp);
-
-                py.Scope.RequestResult = (bool)baseServer.Settings.Current.RedirectErrors ? error : py.Scope.RequestResult;
-
-                ErrorLogger.WithTrace(baseServer.Settings, string.Format("[Fatel][Backend error => SpecialRun()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
+                string error = HandleError(py, exp, true);
+                py.Scope.RequestResult = (bool)baseServer.Settings.Current.RedirectErrors ? error : DefaultErrorStatement;
+                ErrorLogger.WithTrace(baseServer.Settings, string.Format("[Fatel][Backend error => RunStartups()] : hosted-script-message : {2}.\nexception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace, error), typeof(PythonRunner));
             }
         }
+    
     }
 }
 

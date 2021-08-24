@@ -18,17 +18,18 @@ namespace Modetor.Net.Server.Core.HttpServers
 {
     public abstract partial class BaseServer
     {
-        public static Dictionary<string, BaseServer> Servers = new();
-
+        public static Dictionary<string, BaseServer> Servers { get; private set; } = new();
+        public static bool IsValidIP(string ip)
+        {
+            return IPAddress.TryParse(ip, out _);
+        }
         public static BaseServer InitializeServer(string ip, int port)
         {
             ErrorLogger.Initialize();
 
             string address = $"{ip}:{port}";
             if (Servers.ContainsKey(address))
-            {
                 return Servers[address];
-            }
             else
             {
                 Settings settings = new();
@@ -42,7 +43,7 @@ namespace Modetor.Net.Server.Core.HttpServers
                     else
                         x = null;
 
-                    if (x == null)
+                    if (x == null || x.Listener == null)
                         return null;
 
                     x.SetSettings(settings);
@@ -113,8 +114,9 @@ namespace Modetor.Net.Server.Core.HttpServers
         {
             IP = ip;
             Port = port;
-            SetupManualy(ip, port);
-
+            if (!SetupManualy(ip, port))
+                return;
+            RequestsCount = 0;
             Signal = new ManualResetEventSlim();
             BroadcastReceiverControlSignal = ControlSignal.OFF;
             RegisteredClients = new Dictionary<string, Device>();
@@ -124,6 +126,7 @@ namespace Modetor.Net.Server.Core.HttpServers
             ServerTimer = new();
         }
 
+        public void ClearRegisteredClients() => RegisteredClients.Clear();
         public void Start() {
             try
             {
@@ -169,7 +172,7 @@ namespace Modetor.Net.Server.Core.HttpServers
                     bool ignore = true;
                     System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged += (s, e) =>
                     {
-                        if (!Active && !IsSuspended)
+                        if (!Active || IsSuspended)
                             return;
 
                         if (ignore) { ignore = !ignore; return; }
@@ -223,7 +226,10 @@ namespace Modetor.Net.Server.Core.HttpServers
                             if(IsSuspended)
                                 client.Close();
                             else
+                            {
                                 SetupServerProcedure(client);
+                                RequestsCount++;
+                            }
 
                         }
                     }
@@ -246,13 +252,27 @@ namespace Modetor.Net.Server.Core.HttpServers
             }
             catch (Exception exp)
             {
+                StartupError();
                 ErrorLogger.WithTrace(Settings, string.Format("[Warning][Server error => Start()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
             }
         }
-        public void SetupManualy(string ip, int port)
+        public bool SetupManualy(string ip, int port)
         {
-            Listener = new TcpListener(IPAddress.Parse(ip), port);
-            Listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+            try {
+                Listener = new TcpListener(IPAddress.Parse(ip), port);
+                Listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                return true;
+            }
+            catch(Exception exp) {
+                Listener = null;
+                ErrorLogger.WithTrace(string.Format("[FATEL][Server error => SetupManualy] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+                return false;
+            }
+        }
+        public void StartupError()
+        {
+            OnStartupError();
+            Shutdown();
         }
         public void Suspend()
         {
@@ -306,9 +326,7 @@ namespace Modetor.Net.Server.Core.HttpServers
                                 PythonRunner.SpecialRun(new Backbone.HttpRequestHeader(client, this, false), new HttpRespondHeader(), controlFlow.Target);
                             }).ContinueWith(t => {
                                 if (client.Connected)
-                                {
                                     client.Close();
-                                }
                             }).ConfigureAwait(false);
                             processed = true;
                             return;
@@ -348,7 +366,13 @@ namespace Modetor.Net.Server.Core.HttpServers
         internal protected virtual void OnRecieveRequest(TcpClient client) => client.Close();
         internal protected virtual void OnBroadcast(Action<object> action, object obj)
         {
-            new Thread(() => action?.Invoke(obj)) { Priority = ThreadPriority.Lowest, IsBackground = true }.Start();
+            new Thread(() =>
+            {
+                try { action?.Invoke(obj); }
+                catch(Exception exp) {
+                    ErrorLogger.WithTrace(string.Format("[Error][Server error => OnBroadcast] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+                }
+            }) { Priority = ThreadPriority.Lowest, IsBackground = true }.Start();
         }
         internal protected async System.Threading.Tasks.Task ProcessRequest(TcpClient client)
         {
@@ -356,6 +380,9 @@ namespace Modetor.Net.Server.Core.HttpServers
             {
                 Backbone.HttpRequestHeader req = null;
                 NetworkStream stream = client.GetStream();
+                req = new Backbone.HttpRequestHeader(client, this, false);
+                
+                
 
                 client.ReceiveTimeout = Settings.ReceiveTimeout;
                 client.SendTimeout = Settings.SendTimeout;
@@ -368,23 +395,47 @@ namespace Modetor.Net.Server.Core.HttpServers
                     {
                         string clientAddress = client.Client.RemoteEndPoint.ToString().Split(':')[0];
                         // just refuse to connect :-)
-                        if (RegisteredClients.Count >= (int)Settings.Current.MaxClientsCount)
+                        if (RegisteredClients.Count >= (int)Settings.Current.MaxClientsCount && !RegisteredClients.ContainsKey(clientAddress))
                         {
-                            ErrorLogger.WithTrace(Settings, string.Format("[Fatel][Server's Settings violation warning] Connections(Clients) exceeded the limit {0}", (int)Settings.Current.MaxClientsCount), GetType());
+                            ErrorLogger.WithTrace(Settings, string.Format("[Error][Server's Settings violation warning] Connections(Clients) exceeded the limit {0}", (int)Settings.Current.MaxClientsCount), GetType());
+                            
+                            // read a request with no respond! 
+                            req.ProcessRequestHeader(client, 1);
+                            if (Port == 80 || Port  <= 1000)
+                            {
+                                
+                                HttpRespondHeader resh = new();
+                                resh.SetState(req.HttpVersion, HttpRespondState.MAX_CLIENTS_LIMIT);
+                                resh.AddHeader("Content-Type", "text/plain");
+                                //resh.AddHeader("Content-Length", );
+                                resh.SetBody("Error 401 Max Clients Limit");
+                                await stream.WriteAsync(resh.Build());
+                            }
+                            else
+                            {
+
+                                byte[] intBytes = BitConverter.GetBytes(0x0000c2);
+                                if (BitConverter.IsLittleEndian)
+                                    Array.Reverse(intBytes);
+                                await stream.WriteAsync(intBytes);
+                            }
+                            
+                            await stream.DisposeAsync();
+                            client.Close();
+                            return;
+                        }
+
+                        req.ProcessRequestHeader(client);
+                        if (string.IsNullOrEmpty(req.RequestedTarget))
+                        {
+                            ErrorLogger.WithTrace(Settings, "[Warning][Invalid Connection] : this connection has no data", GetType());
                             await stream.DisposeAsync();
                             client.Close();
                             return;
                         }
                         else
                         {
-                            req = new Backbone.HttpRequestHeader(client, this);
-                            if (string.IsNullOrEmpty(req.RequestedTarget))
-                            {
-                                ErrorLogger.WithTrace(Settings, "[Warning][Invalid Connection] : this connection has no data", GetType());
-                                await stream.DisposeAsync();
-                                client.Close();
-                                return;
-                            }
+                            
                             lock (@lock)
                             {
                                 if (!RegisteredClients.ContainsKey(clientAddress))
@@ -397,6 +448,14 @@ namespace Modetor.Net.Server.Core.HttpServers
 
                     if (!"Any".Equals((string)Settings.Current.AcceptConnectionsFrom))
                     {
+                        req.ProcessRequestHeader(client);
+                        if (string.IsNullOrEmpty(req.RequestedTarget))
+                        {
+                            ErrorLogger.WithTrace(Settings, "[Warning][Invalid Connection] : this connection has no data", GetType());
+                            await stream.DisposeAsync();
+                            client.Close();
+                            return;
+                        }
                         DeviceType clientDeviceType = Device.GetDeviceByUserAgent(req.HeaderKeys.ContainsKey("User-Agent") ? req.HeaderKeys["User-Agent"] : null).Type;
 
                         DeviceType deviceType = Device.GetDevicType((string)Settings.Current.AcceptConnectionsFrom);
@@ -412,9 +471,9 @@ namespace Modetor.Net.Server.Core.HttpServers
                 }
 
 
-                if (req == null)
+                if (req.State == HttpRequestState.None)
                 {
-                    req = new Backbone.HttpRequestHeader(client, this);
+                    req.ProcessRequestHeader(client);
                     if (string.IsNullOrEmpty(req.RequestedTarget))
                     {
                         ErrorLogger.WithTrace(Settings, "[Warning][Invalid Connection] : this connection has no data", GetType());
@@ -449,6 +508,9 @@ namespace Modetor.Net.Server.Core.HttpServers
                         break;
                     case HttpRequestState.UNKNOWN_RESOURCE_FAILURE:
                         Respond_UNKNOWN_RESOURCE_FAILURE(req, stream, client);
+                        break;
+                    case HttpRequestState.PAYLOAD_TOO_LARGE:
+                        Respond_PayloodTooLarge(req, stream, client);
                         break;
                 }
 
@@ -492,11 +554,13 @@ namespace Modetor.Net.Server.Core.HttpServers
         {
             Started?.Invoke(this, new ServerStateEventArgs(this));
         }
-
+        protected virtual void OnStartupError()
+        {
+            StartError?.Invoke(this, new ServerStateEventArgs(this));
+        }
         protected virtual void OnSuspended()
         {
-            Console.WriteLine("Suspended!!!");
-            //Suspended?.Invoke(this, new ServerStateEventArgs(this));
+            Suspended?.Invoke(this, new ServerStateEventArgs(this));
         }
 
         protected virtual void OnShutteddown()
@@ -515,6 +579,14 @@ namespace Modetor.Net.Server.Core.HttpServers
         }
         #endregion
 
+        public void BlockClient(string client)
+        {
+            if (IP.Equals(client)) return;
+            if (!BlockedClients.Contains(client))
+            {
+                BlockedClients.Add(client);
+            }
+        }
 
         public static string[] GetNeworkIPs()
         {
@@ -549,21 +621,18 @@ namespace Modetor.Net.Server.Core.HttpServers
         public readonly Broadcast BroadcastReceiver;
         public ControlSignal BroadcastReceiverControlSignal;
         internal System.Timers.Timer ServerTimer;
+        public int RegisteredClientCount => RegisteredClients.Count;
         public IReadOnlyDictionary<string, Device> GetRegisteredClients() => RegisteredClients;
+
         public IReadOnlyList<string> GetBlockedClients() => BlockedClients;
-        public void BlockClient(string client)
-        {
-            if (!BlockedClients.Contains(client))
-            {
-                BlockedClients.Add(client);
-            }
-        }
+        
         public bool ForgiveClient(string client) => BlockedClients.Remove(client);
         public bool IsBlockedClient(string client) => BlockedClients.Contains(client);
 
 
-        //public event EventHandler Started;
+        //public event EventHandler Started;StartupError
         public event ServerStateEvent Suspended = delegate { };
+        public event ServerStateEvent StartError = delegate { };
         public event ServerStateEvent Shutteddown = delegate { };
         public event ServerStateEvent Started = delegate { };
         public event ServerStateEvent SmartSwitchEnd = delegate { };
@@ -577,7 +646,7 @@ namespace Modetor.Net.Server.Core.HttpServers
         public bool Active { get; private set; }
         public bool IsSuspended { get; private set; }
 
-
+        public long RequestsCount;
         public bool IsShutdown { get; private set; }
         #endregion
 

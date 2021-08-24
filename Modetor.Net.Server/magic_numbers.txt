@@ -1,1 +1,39 @@
 ﻿0x011000  : when trying to return to 404 error request, a null value retured !
+0xc002
+
+
+
+
+
+do
+                {
+                    if (stream.DataAvailable && Client.Available > 0)
+                    {
+                        if (length > maxBytes || Client.Available > maxBytes)
+                        {
+                            break;
+                        }
+
+                        b = new byte[Client.Available];
+                        int read = await stream.ReadAsync(b, 0, b.Length);
+                        if (read <= 0)
+                        {
+                            break;
+                        }
+
+                        length += read;
+
+                        await memory.WriteAsync(b, 0, read);
+                    }
+                    else
+                    {
+                        if (readingCounts-- <= 0)
+                        {
+                            break;
+                        }
+
+                        System.Threading.Thread.Sleep(1);
+                    }
+
+                }
+                while (true);

@@ -7,13 +7,16 @@ namespace Modetor.Net.Server.Core.Backbone
     {
         private static TextWriterTraceListener textWriter;
         private static bool P_Initialized = false;
+        public static string LogFile { get; private set; }
         public static void Initialize()
         {
             if (P_Initialized)
                 return;
+            if (!Directory.Exists("logs"))
+                Directory.CreateDirectory("logs");
 
-            textWriter = new TextWriterTraceListener(File.Open(Backbone.FilePath.Build("logs", "L" + DateTime.Now.Ticks.ToString() + ".txt"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite), "Trace -Output"); ;
-
+            LogFile = Backbone.FilePath.Build("logs", "L" + DateTime.Now.Ticks.ToString() + ".txt");
+            textWriter = new TextWriterTraceListener(File.Open(LogFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite), "Trace -Output");
             Trace.Listeners.Add(textWriter);
             Trace.AutoFlush = true;
             P_Initialized = true;

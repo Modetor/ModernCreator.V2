@@ -18,12 +18,20 @@ namespace Modetor.Net.Server.Core.Backbone
             {
                 Rule r = new Rule("Corrupted");
                 r.Path = r.HomeFile = string.Empty;
-                r.Path = string.Empty;
                 r.Available = false;
                 return r;
             }
         }
-
+        public static Rule Root
+        {
+            get
+            {
+                Rule r = new Rule("Root");
+                r.Path = r.HomeFile = Settings.RootPath;
+                r.Available = false;
+                return r;
+            }
+        }
 
 
         public Rule(string name)

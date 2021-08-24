@@ -23,7 +23,25 @@ namespace Server_Control_Panel
                 //t.Use
                 Current.Dispatcher.Invoke(delegate
                 {
-                    MessageBox.Show(args.Get("action"));
+                    if (!args.Contains("action"))
+                        return;
+                    else
+                    {
+                        int state = args.GetInt("action");
+                        if (state == 0)
+                        {
+                            Modetor.Net.Server.Core.HttpServers.BaseServer.Servers[args.Get("si")].Suspend();
+                        }
+                        else if (state == 1)
+                        {
+                            Modetor.Net.Server.Core.HttpServers.BaseServer.Servers[args.Get("si")].Resume();
+                        }
+                        else if (state == 2)
+                        {
+                            // Started....
+                        }
+                    }
+                    //MessageBox.Show(args.Get("action"));
                 });
             };
         }

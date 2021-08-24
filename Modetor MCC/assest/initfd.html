@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html, body, * {
+            user-select: none;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 10px; left: 0px;
+            width: 100%; color: #6d6d6d; 
+            text-align: center;
+            font-size: 10pt;
+        }
+        .footer b {
+            color: rgb(41 41 41);
+            font-size: 11.5pt;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    <div style="text-align: center; margin: 0 auto; margin-top: 15%;">
+        <i id="icon" style="font-size: 80pt;font-style: normal; filter: grayscale(0.4);">🤕</i><br/>
+        <i style="font-size: 30pt;font-style: normal;"> Connectivity Issue!</i><br>
+        <small id="msg" style="font-size: 15pt;font-style: normal; color: #6d6d6d"></small><br>
+
+        <div class="footer">
+            <p>
+                <b>Contact IT Support :</b><br />
+                📞  218 91988 5206 &nbsp;&nbsp;&nbsp;
+                📧 MohammadAlbay@outlook.com
+            </p>
+        </div>
+    </div>
+    <script>
+        let queryString = location.href.split('?')[1];
+        let message = decodeURI(queryString.split('=')[1]);
+        document.querySelector("#msg").innerHTML = message;
+    </script>
+</body>
+</html>

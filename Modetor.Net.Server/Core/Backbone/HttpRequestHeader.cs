@@ -63,26 +63,27 @@ namespace Modetor.Net.Server.Core.Backbone
             Parameters = new System.Collections.Specialized.NameValueCollection();
 
             if (autoRead)
-            {
                 ProcessRequestHeader(client);
-            }
-            
+
         }
 
-        private void ProcessRequestHeader(TcpClient client)
+        public void ProcessRequestHeader(TcpClient client, int max_header = -1)
         {
+            // don't re-read!
+            if (State != HttpRequestState.None)
+                return;
             try
             {
-                State = ReadContentHeader(client.GetStream()).Result;
+                State = ReadContentHeader(client.GetStream(), max_header).Result;
             }
             catch (Exception exp)
             {
                 State = HttpRequestState.GENERIC_FAILURE;
-                ErrorLogger.WithTrace(Server.Settings, string.Format("[Warning][Server error => Constructor()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+                ErrorLogger.WithTrace(Server.Settings, string.Format("[Error][Server request handler => ProcessRequestHeader()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
             }
         }
 
-        private async System.Threading.Tasks.Task<HttpRequestState> ReadContentHeader(NetworkStream stream)
+        private async System.Threading.Tasks.Task<HttpRequestState> ReadContentHeader(NetworkStream stream, int max_header = -1)
         {
             
             MemoryStream memory = new MemoryStream();
@@ -146,16 +147,25 @@ namespace Modetor.Net.Server.Core.Backbone
                 //while (true);
                 #endregion
                 // Algorithm 2
-                long maxBytes = (int)Server.Settings.Current.MaxHttpRequestSize * 1024 * 1024;
+                long maxBytes = (max_header <= 0 ? (int)Server.Settings.Current.MaxHttpRequestSize : max_header) * 1024 * 1024;
                 long length = 0;
                 int readingCounts = 5;
+                DateTime now = DateTime.Now;
                 byte[] b;
+
+                int state = 0;
                 do
                 {
+                    if ((DateTime.Now - now).Seconds > ((int)Server.Settings.Current.ReceiveTimeout / 1000))
+                    {
+                        state = -1;
+                        break;
+                    }
                     if (stream.DataAvailable && Client.Available > 0)
                     {
                         if (length > maxBytes || Client.Available > maxBytes)
                         {
+                            state = -2;
                             break;
                         }
 
@@ -173,16 +183,18 @@ namespace Modetor.Net.Server.Core.Backbone
                     else
                     {
                         if (readingCounts-- <= 0)
-                        {
                             break;
-                        }
 
-                        System.Threading.Thread.Sleep(1);
+                        System.Threading.Thread.Sleep(5);
                     }
 
                 }
                 while (true);
-                
+
+                if(state == -1)
+                    return HttpRequestState.IO_FAILURE;
+                if (state == -2)
+                    return HttpRequestState.PAYLOAD_TOO_LARGE;
             }
             else
             {
@@ -191,10 +203,15 @@ namespace Modetor.Net.Server.Core.Backbone
 
             memory.Seek(0, SeekOrigin.Begin);
 
+            if (memory.Length == 0) return HttpRequestState.IO_FAILURE;
+
             byte[] mem = memory.ToArray();
 
+            if((bool)Server.Settings.Current.DebugMode && (bool)Server.Settings.Current.PrintRequestData)
+            {
+                Console.WriteLine("\nReuqest : \n\"{0}\"\r\n", Encoding.UTF8.GetString(memory.ToArray()));
+            }
             
-
             byte[] data;
             byte[] header;
             bool test = mem.Contains(ContentSplitter, out int pushback);
@@ -203,17 +220,18 @@ namespace Modetor.Net.Server.Core.Backbone
                 pushback += ContentSplitter.Length;
                 header = mem[..pushback];
                 data = mem[pushback..];
-
+                RequestBody = data;
                 string strheader = Encoding.UTF8.GetString(header);
 
                 ParseHeader(strheader.Split("\r\n"));
 
-                
+                if (HeaderKeys.ContainsKey("Resolved-Location"))
+                    return HttpRequestState.OK;
 
                 //
                 /// IF NULL, JUST ABORT EVERYTHING(INCLUDING PARAMETERS..) AND RESPOND WITH 404 ERROR
                 //
-                if (AbsoluteFilePath != null && !Rule.Corrupted.Equals(Repository))
+                if (AbsoluteFilePath != null && Repository != Rule.Corrupted)
                 {
 
                     if (!Repository.AllowCrossRepositoriesRequests && HeaderKeys.ContainsKey("R-Referer"))
@@ -246,13 +264,21 @@ namespace Modetor.Net.Server.Core.Backbone
                         return HttpRequestState.SECURITY_FAILURE;
                     }
                     
+
                     if (HeaderKeys.ContainsKey(MODETOR_SERVER_BOUNDARY))
                     {
-                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("----"))
+                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("----") || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED))
                         {
                             if (Repository.SupportUploads)
                             {
-                                MultipartFormDataParser parser = await MultipartFormDataParser.ParseAsync(new MemoryStream(data)).ConfigureAwait(false);
+                                MultipartFormDataParser parser;
+                                try { parser = await MultipartFormDataParser.ParseAsync(new MemoryStream(data)); }
+                                catch(Exception exp)
+                                {
+                                    ErrorLogger.WithTrace(Server.Settings, string.Format("[Error][Server request handler => ReadContentHeader()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+                                    return HttpRequestState.PARSE_FAILURE;
+                                }
+                                
                                 foreach (FilePart file in parser.Files)
                                 {
                                 RETRY:
@@ -283,23 +309,34 @@ namespace Modetor.Net.Server.Core.Backbone
                             System.Collections.Specialized.NameValueCollection item = System.Web.HttpUtility.ParseQueryString(Encoding.UTF8.GetString(data));
 
                             foreach (string key in item.AllKeys)
-                            {
                                 Parameters.Add(key, item.Get(key));
+                        }
+                        //else if(false/*HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED)*/)
+                        //{
+                        //    System.Collections.Specialized.NameValueCollection item = System.Web.HttpUtility.ParseQueryString(Encoding.UTF8.GetString(data));
+
+                        //    foreach (string key in item.AllKeys)
+                        //        Parameters.Add(key, item.Get(key));
+                        //}
+                        //else
+                        //{
+                            
+                        //}
+                        //Console.WriteLine("\n\n\nServer's Unknown data : {0}\n\n",Encoding.UTF8.GetString(data));
+
+                    }
+                    else if(data != null && data.Length > 0)
+                    {
+                        int prelength = Parameters.Count;
+                        try {
+                            System.Collections.Specialized.NameValueCollection item = System.Web.HttpUtility.ParseQueryString(Encoding.UTF8.GetString(RequestBody));
+                            if(item.Count != 0)
+                            {
+                                foreach (string key in item.AllKeys)
+                                    Parameters.Add(key, item.Get(key));
                             }
                         }
-                        else if(HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED))
-                        {
-                            System.Collections.Specialized.NameValueCollection item = System.Web.HttpUtility.ParseQueryString(Encoding.UTF8.GetString(data));
-
-                            foreach (string key in item.AllKeys)
-                                Parameters.Add(key, item.Get(key));
-                        }
-                        else
-                        {
-                            
-                        }
-                        Console.WriteLine(Encoding.UTF8.GetString(data));
-
+                        catch { }
                     }
                     return HttpRequestState.OK;
                 }
@@ -362,14 +399,17 @@ namespace Modetor.Net.Server.Core.Backbone
             string fileNameAndQueryString = System.Web.HttpUtility.UrlDecode(headers[0][r0..rx].Trim());
             RequestedTarget = fileNameAndQueryString;
             string filename;
+            string query;
             int rxx = fileNameAndQueryString.IndexOf('?');
             if (rxx == -1)
+            {
                 filename = fileNameAndQueryString;
+                query = string.Empty;
+            }
             else
             {
                 filename = fileNameAndQueryString[0..rxx];
-
-                string query = fileNameAndQueryString[(rxx + 1)..];
+                query = fileNameAndQueryString[(rxx + 1)..];
                 System.Collections.Specialized.NameValueCollection item = System.Web.HttpUtility.ParseQueryString(query);
 
                 foreach (string key in item.AllKeys)
@@ -387,16 +427,34 @@ namespace Modetor.Net.Server.Core.Backbone
                     filename = filename.Replace(ext, "py");
             }
 
+            RequestedFileName = filename;
+            bool isUsingVirtualLink = false;
+            if(Server.Settings.VirtualLinks.Count > 0)
+            {
+                if(Server.Settings.VirtualLinks.ContainsKey(filename))
+                {
+                    VirtualLinks vlink = Server.Settings.VirtualLinks[filename];
+                    if(vlink.Enabled)
+                    {
+                        isUsingVirtualLink = true;
+                        HeaderKeys.Remove("Resolved-Location");
+                        HeaderKeys.Add("Resolved-Location", vlink.Target + "?" + query);
+                    }
+                }
+            }
+            
+            // at this point, we need no file-path-check things :) 
+            if (isUsingVirtualLink)
+                return;
+
             Tuple<bool, string> t = PathResolver.Resolve(Server.Settings, filename, HeaderKeys.ContainsKey("R-Referer") ? HeaderKeys["R-Referer"] : string.Empty);
 
             if (t.Item1)
             {
                 AbsoluteFilePath = t.Item2;
-                
-                if(Server.Settings.GetRepositoryByPath(t.Item2, out Rule r))
-                {
+
+                if (Server.Settings.GetRepositoryByPath(t.Item2, out Rule r))
                     Repository = r;
-                }
             }
 
         }
@@ -416,7 +474,6 @@ namespace Modetor.Net.Server.Core.Backbone
         {
             HttpMethod = Enum.IsDefined(typeof(HttpMethod), requestMethod) ? (HttpMethod)Enum.Parse(typeof(HttpMethod), requestMethod) : HttpMethod.UNKNOWN;
         }
-        
         public string GetHeaderValue(string key) => HeaderKeys.ContainsKey(key) ? HeaderKeys[key] : null;
         public bool HasHeaderKey(string key) => HeaderKeys.ContainsKey(key);
         public void RemoveHeaderValue(string key) => HeaderKeys.Remove(key);
@@ -429,13 +486,19 @@ namespace Modetor.Net.Server.Core.Backbone
                 Parameters.Add(key, item.Get(key));
         }
         public void ClearParameters() => Parameters.Clear();
+        public bool HasParameters => Parameters.Count > 0;
+        public bool ContainParameter(string p)
+        {
+            return Parameters.AllKeys?.Contains(p) ?? false;
+        }
         internal void DeleteUploadFiles()
         {
             try
             {
                 foreach (string file in P_UploadFilePaths)
                 {
-                    File.Delete(file);
+                    if(File.Exists(file))
+                        File.Delete(file);
                 }
             }
             catch (Exception exp)
@@ -456,16 +519,16 @@ namespace Modetor.Net.Server.Core.Backbone
                  && HeaderKeys.ContainsKey("Connection") && HeaderKeys["Connection"].Equals("Upgrade");
         }
         internal bool IsServerSentEventRequest()
-        {
+        { 
             return HttpMethod == HttpMethod.GET && HeaderKeys.ContainsKey("Connection") && HeaderKeys["Connection"].Equals("keep-alive")
                  && HeaderKeys.ContainsKey("Accept") && HeaderKeys["Accept"].Equals("text/event-stream");
         }
         #region Properties
         private readonly List<string> P_UploadFilePaths;
-        internal readonly TcpClient Client;
-        
+        public readonly TcpClient Client;
+        public byte[] RequestBody;
         public readonly HttpServers.BaseServer Server;
-        public HttpRequestState State { get; private set; }
+        public HttpRequestState State { get; private set; } = HttpRequestState.None;
         public readonly string ClientAddress;
         public readonly string ClientIP;
         public readonly int ClientPort;
@@ -474,6 +537,7 @@ namespace Modetor.Net.Server.Core.Backbone
         public HttpMethod HttpMethod { get; private set; }
         public HttpVersion HttpVersion { get; private set; }
         public string RequestedTarget { get; private set; }
+        public string RequestedFileName { get; private set; }
         public string AbsoluteFilePath { get; set; } = null;
         public Rule Repository { get; private set; } = Rule.Corrupted;
         public string[] UploadFilePaths => P_UploadFilePaths.ToArray();

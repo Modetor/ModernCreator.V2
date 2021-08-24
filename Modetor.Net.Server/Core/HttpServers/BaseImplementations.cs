@@ -365,13 +365,11 @@ namespace Modetor.Net.Server.Core.HttpServers
             if (req.Repository.HasConnectionHandler)
             {
                 PythonRunner.Run(req, new HttpRespondHeader(), true);
-
                 await stream.DisposeAsync();
                 client.Close();
             }
             else
             {
-
                 if (req.IsWebsocketUpgradRequest())
                 {
                     if (req.Repository.AllowWebSocket)
@@ -412,8 +410,8 @@ namespace Modetor.Net.Server.Core.HttpServers
                     HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
                     if (!res.DidRespond())
                     {
-                        stream.Write(res.Build());
-                        stream.Flush();
+                        stream?.Write(res.Build());
+                        stream?.Flush();
                     }
 
                     if (req.HasUploadedFiles)
@@ -421,8 +419,8 @@ namespace Modetor.Net.Server.Core.HttpServers
 
                     if (client.Connected)
                     {
-                        stream.Dispose();
-                        client.Close();
+                        stream?.Dispose();
+                        client?.Close();
                     }
 
                 }
@@ -454,6 +452,7 @@ namespace Modetor.Net.Server.Core.HttpServers
         private  void Respond_GENERIC_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream);
         private  void Respond_IO_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream);
         private  void Respond_PARSE_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream, HttpRespondState.INTERNAL_SERVER_ERROR);
+        private  void Respond_PayloodTooLarge(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream, HttpRespondState.PAYLOAD_TOO_LARGE);
         private  void Respond_UNKNOWN_RESOURCE_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client)
         { 
             void __Default_Response__(ref HttpRespondHeader res, bool state)

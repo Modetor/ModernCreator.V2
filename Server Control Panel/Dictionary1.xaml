@@ -1,0 +1,38 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SoftwareUpdate">
+
+    <Style x:Key="TitlebarButton" TargetType="Label">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        <Setter Property="Width" Value="45" />
+    </Style>
+
+    <Style x:Key="Appname" TargetType="Label" xml:lang="ar-AR">
+        <Setter xml:lang="Arabic" Property="FontFamily" Value="Ara Aqeeq Bold" />
+        <!--<Setter xml:lang="English" Property="FontFamily" Value="Nunito Black" />-->
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="Width" Value="auto" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+        <Setter Property="Content" Value="Modétor - موديتور" />
+    </Style>
+
+    <Style x:Key="centered-appname" TargetType="Label" BasedOn="{StaticResource Appname}">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <SolidColorBrush x:Key="TitlebarBackgroundBrush">
+        <SolidColorBrush.Color>
+            <Color R="240" G="240" B="240" A="255" />
+        </SolidColorBrush.Color>
+    </SolidColorBrush>
+    
+</ResourceDictionary>

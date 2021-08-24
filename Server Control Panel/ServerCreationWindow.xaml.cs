@@ -45,7 +45,7 @@ namespace Server_Control_Panel
             string port = port_input.Text.Trim();
             string ip;
             if(manual_toggle.IsChecked ?? false)
-                ip = manual_input.Text + ":" + port;
+                ip = manual_input.Text;
             else
             {
                 if (ips_cbox.SelectedItem == null || ips_cbox.SelectedIndex <= 0)
@@ -62,31 +62,57 @@ namespace Server_Control_Panel
                 MessageBox.Show("Invalid IP value", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             else
             {
+                if(Modetor.Net.Server.Core.HttpServers.BaseServer.Servers.ContainsKey(ip + ":" + port))
+                {
+                    MessageBox.Show("There's a server running with the same address, consider using different Port number", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
                 Modetor.Net.Server.Core.HttpServers.BaseServer s = Modetor.Net.Server.Core.HttpServers.BaseServer.InitializeServer(ip, Iport);
-                s.Resumed += (s, e) =>
-                {
-                    MessageBox.Show(s.Address + " is resumed!");
-                };
-                s.Suspended += (s, e) =>
-                {
-                    MessageBox.Show(s.Address + " is suspended!");
-                };
+                
                 if (null != s)
                 {
+                    s.StartError += S_StartError;
                     s.Start();
-                    new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
-                    .AddArgument("action", "viewConversation")
-                    .AddArgument("conversationId", 9813)
-                    .AddText("Server started")
-                    .AddText(s.Address)
-                    .Show();
+                    if(s.Active)
+                    {
+                        s.StartError -= S_StartError;
+                        new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
+                        .AddText("Server started")
+                        .AddText(s.Address)
+                        .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(5));
 
-                    DialogResult = true;
-                    Close();
+                        Tag = s;
+                        DialogResult = true;
+                        Close();
+                    }
+                    
                 }
-                
+                else
+                {
+                    MessageBox.Show("Server encoutered an error while initializing.. consider using a valid IP", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
             }
         }
 
+        private void S_StartError(Modetor.Net.Server.Core.HttpServers.BaseServer server, EventArgs args)
+        {
+            MessageBox.Show("Server failed to start. Read log file at : \n"+ Modetor.Net.Server.Core.Backbone.ErrorLogger.LogFile, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void manual_toggle_Checked(object sender, RoutedEventArgs e)
+        {
+            bool isChecked = manual_toggle.IsChecked ?? false;
+            if (isChecked)
+            {
+                ips_cbox.IsEnabled = false;
+                manual_input.IsEnabled = true;
+            }
+            else
+            {
+                ips_cbox.IsEnabled = true;
+                manual_input.IsEnabled = false;
+            }
+        }
     }
 }

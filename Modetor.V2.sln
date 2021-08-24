@@ -12,10 +12,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ModernCreator Console", "Mo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoftwareUpdate", "..\..\..\Products\Systems\SoftwareUpdate\SoftwareUpdate.csproj", "{6686AACA-A695-42BA-8969-581320C63C11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server Control Panel", "Server Control Panel\Server Control Panel.csproj", "{1F7AE331-BAB7-429C-9098-2FDC4EA1B505}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server Control Panel", "Server Control Panel\Server Control Panel.csproj", "{1F7AE331-BAB7-429C-9098-2FDC4EA1B505}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A2E3D91A-710B-4EC6-BBB0-386A161E3AD9} = {A2E3D91A-710B-4EC6-BBB0-386A161E3AD9}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modetor MCC", "Modetor MCC\Modetor MCC.csproj", "{438076A6-35CB-4134-8FA9-642EEBB770CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,18 @@ Global
 		{1F7AE331-BAB7-429C-9098-2FDC4EA1B505}.Release|x64.Build.0 = Release|Any CPU
 		{1F7AE331-BAB7-429C-9098-2FDC4EA1B505}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F7AE331-BAB7-429C-9098-2FDC4EA1B505}.Release|x86.Build.0 = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|x64.Build.0 = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Debug|x86.Build.0 = Debug|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|x64.ActiveCfg = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|x64.Build.0 = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|x86.ActiveCfg = Release|Any CPU
+		{438076A6-35CB-4134-8FA9-642EEBB770CF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

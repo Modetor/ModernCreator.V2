@@ -303,7 +303,7 @@ namespace Modetor.Net.Server.Core.Backbone
 
             //if (P_BodySet) /*throw new NotSupportedException("Cannot set mutiple bodies.");*/
             //    return;
-
+            AddHeader("Content-Length", body.Length.ToString());
             RespondBuffer.Add(Encoding.UTF8.GetBytes(LineTerminator));
             RespondBuffer.Add(body);
             P_BodySet = true;
@@ -340,11 +340,14 @@ namespace Modetor.Net.Server.Core.Backbone
         public static readonly string MOVED_PERMANENTLY = "301 Moved Permanently";
 
         public static readonly string BAD_REQUEST = "400 Bad Request";
+        public static readonly string MAX_CLIENTS_LIMIT = "401 Max Clients Limit"; /*server specific code*/
         public static readonly string FORBIDDEN = "403 Forbidden";
         public static readonly string NOT_FOUND = "404 Not Found";
         public static readonly string METHOD_NOT_ALLOWED = "405 Method Not Allowed";
+        public static readonly string PAYLOAD_TOO_LARGE = "413 Payload Too Large";
         public static readonly string UPGRADE_REQUIRED = "426 Upgrade Required";
 
         public static readonly string INTERNAL_SERVER_ERROR = "500 Internal Server Error";
+        
     }
 }

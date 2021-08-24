@@ -1,0 +1,58 @@
+﻿<Window x:Class="Modetor_MCC.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Modetor_MCC"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="600" Width="850" 
+        MinWidth="650" MinHeight="500"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        WindowStartupLocation="CenterScreen"  SizeChanged="Window_SizeChanged">
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="1,1,1,1" CaptionHeight="32"  ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" />
+
+    </WindowChrome.WindowChrome>
+    <Border x:Name="WindowBorder" BorderThickness="0.5" BorderBrush="{Binding Source={x:Static SystemParameters.WindowGlassBrush}}">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid x:Name="Titlebar" Height="32" VerticalAlignment="Top" Background="{StaticResource TitlebarBackgroundBrush}" Margin="0.3,0.3,0.3,0" Grid.Row="0">
+
+                <Grid Width="auto" HorizontalAlignment="Right" FlowDirection="LeftToRight">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <Label x:Name="MaximizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MaximizeEvent"  ToolTip="Maximize" Grid.Column="1" Content="&#xE740;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                    <Label x:Name="MinimizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MinimizeEvent"  ToolTip="Minimize" Grid.Column="0" Content="&#xE738;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                    <Label x:Name="CloseButton" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="CloseEvent"     ToolTip="Close"    Grid.Column="2" Content="&#xE711;" Foreground="Red"   HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                </Grid>
+                <Label Style="{StaticResource centered-appname}" />
+
+                <Grid Width="auto" HorizontalAlignment="Left" FlowDirection="LeftToRight">
+                    <Label x:Name="x2" Style="{StaticResource TitlebarButton}"  PreviewMouseUp="x2_PreviewMouseUp"  Width="50" FontSize="20" ToolTip="Close"    Grid.Column="2" Content="&#xE712;" Foreground="Black"   HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter">
+                        <Label.ContextMenu>
+                            <ContextMenu x:Name="menu">
+                                <MenuItem Header="Settings" PreviewMouseUp="menu_Settings_PreviewMouseUp" />
+                                <MenuItem Header="About" PreviewMouseUp="menu_ViewSettings_PreviewMouseUp" />
+                                <MenuItem Header="Exit" PreviewMouseUp="menu_Exit_PreviewMouseUp" />
+                            </ContextMenu>
+                        </Label.ContextMenu>
+                    </Label>
+
+                </Grid>
+            </Grid>
+
+            <wv2:WebView2 Name="webView" Grid.Row="1"></wv2:WebView2>
+            <!--Source="http://127.0.0.1/"-->
+        </Grid>
+
+
+    </Border>
+</Window>

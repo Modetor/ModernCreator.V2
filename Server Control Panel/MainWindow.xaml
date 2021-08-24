@@ -3,52 +3,137 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:properties="clr-namespace:Server_Control_Panel.Properties"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Background="#FFEEEEEE"
-        Title="ModernCreator \ Server Control Panel" Height="500" MaxHeight="500" MinHeight="500" Width="850" MaxWidth="850" MinWidth="850" ResizeMode="CanMinimize" Closing="Window_Closing">
+        Background="#FFEEEEEE" SizeChanged="Window_SizeChanged"
+        Title="ModernCreator \ Server Control Panel" Height="{Binding Source={x:Static properties:Settings.Default},
+                               Path=MainWndHeight}" MaxHeight="{Binding Source={x:Static properties:Settings.Default},
+                               Path=MainWndHeight}" MinHeight="{Binding Source={x:Static properties:Settings.Default},
+                               Path=MainWndHeight}" Width="850" MaxWidth="850" MinWidth="850" ResizeMode="CanMinimize" Closing="Window_Closing">
     <!--<Window.TaskbarItemInfo>
         <TaskbarItemInfo Description="My Server is beautiful!" ProgressState="Normal" Overlay="/Resources/icons8_add_48px.png" />
     </Window.TaskbarItemInfo>-->
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"></ColumnDefinition>
-            <ColumnDefinition Width="*"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="1,1,1,1" CaptionHeight="32"  ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" />
 
-        <Grid Grid.Column="0" Background="#FF262626">
+    </WindowChrome.WindowChrome>
+    <Border x:Name="WindowBorder" BorderThickness="0.6" BorderBrush="{Binding Source={x:Static SystemParameters.WindowGlassBrush}}">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="35"></RowDefinition>
-                <RowDefinition Height="40"></RowDefinition>
-                <RowDefinition Height="40"></RowDefinition>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <Grid x:Name="Titlebar" Height="32" VerticalAlignment="Top" Background="{StaticResource TitlebarBackgroundBrush}" Margin="0.0,0.0,0.0,0" Grid.Row="0">
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="33"></ColumnDefinition>
-                <ColumnDefinition Width="33"></ColumnDefinition>
-                <ColumnDefinition Width="33"></ColumnDefinition>
-                <ColumnDefinition Width="33"></ColumnDefinition>
-                <ColumnDefinition Width="34"></ColumnDefinition>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <ComboBox x:Name="ls_ips" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" Background="#FFE5E5E5" Margin="10,0,10,5" SelectionChanged="ls_ips_SelectionChanged" Height="25" VerticalAlignment="Bottom"></ComboBox>
-            <Image x:Name="refresh_ips_btn" Grid.Row="1" Grid.Column="3" 
+                <Grid Width="auto" HorizontalAlignment="Right" FlowDirection="LeftToRight">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <!--<Label x:Name="MaximizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MaximizeEvent"  ToolTip="Maximize" Grid.Column="0" Content="&#xE740;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>-->
+                    <Label x:Name="MinimizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MinimizeEvent"  ToolTip="Minimize" Grid.Column="1" Content="&#xE738;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                    <Label x:Name="CloseButton" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="CloseEvent"     ToolTip="Close"    Grid.Column="2" Content="&#xE711;" Foreground="Red"   HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+                </Grid>
+                <Label Style="{StaticResource centered-appname}" />
+
+                <Grid Width="auto" HorizontalAlignment="Left" FlowDirection="LeftToRight">
+                    <Label x:Name="x2" Style="{StaticResource TitlebarButton}"     PreviewMouseUp="CloseEvent"   Width="50" FontSize="20" ToolTip="Close"    Grid.Column="2" Content="&#xE712;" Foreground="Black"   HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
+
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"></RowDefinition>
+                    <RowDefinition Height="30"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid Grid.Column="0" Grid.Row="0" Background="{StaticResource TitlebarBackgroundBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"></RowDefinition>
+                        <RowDefinition Height="40"></RowDefinition>
+                        <RowDefinition Height="40"></RowDefinition>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="33"/>
+                        <ColumnDefinition Width="34"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="ls_ips" Grid.Column="0" Grid.ColumnSpan="6" Background="#FFE5E5E5" Margin="10,0,10,0" SelectionChanged="ls_ips_SelectionChanged" Height="25" VerticalAlignment="Center"/>
+                    <Image x:Name="refresh_ips_btn" Grid.Row="1" Grid.Column="3" ToolTip="[F5] Refresh"
                     Source="/Resources/icons8_sync_48px_1.png" PreviewMouseLeftButtonUp="refresh_ips_btn_PreviewMouseLeftButtonUp" Cursor="Hand"/>
-            <Image x:Name="add_server_btn" Grid.Row="1" Grid.Column="0" 
+                    <Image x:Name="add_server_btn" Grid.Row="1" Grid.Column="0" ToolTip="[F2] Create a new server"
                     Source="/Resources/icons8_add_48px.png" PreviewMouseLeftButtonUp="add_server_btn_PreviewMouseLeftButtonUp" Cursor="Hand" />
-            <Image x:Name="server_ctrl_btn" Grid.Row="1" Grid.Column="1" 
-                    Source="/Resources/icons8_Circled_Play_48px.png"  PreviewMouseLeftButtonUp="Image_PreviewMouseLeftButtonUp" Cursor="No" />
-            <Image x:Name="kill_server_btn" Grid.Row="1" Grid.Column="2" 
+                    <Image x:Name="server_ctrl_btn" Grid.Row="1" Grid.Column="1" ToolTip="[F3] Server(s) suspend/resume control"
+                    Source="/Resources/icons8_private_48px.png"  PreviewMouseLeftButtonUp="Image_PreviewMouseLeftButtonUp" Cursor="No" />
+                    <Image x:Name="kill_server_btn" Grid.Row="1" Grid.Column="2" ToolTip="[F4] Kill server(s)"
                     Source="/Resources/icons8_cancel_48px.png"  PreviewMouseLeftButtonUp="kill_server_btn_PreviewMouseLeftButtonUp" Cursor="No"/>
-            <CheckBox x:Name="apply_to_all_btn" Grid.Row="1" Grid.Column="4" FontSize="13"
-                      Grid.ColumnSpan="5" HorizontalAlignment="Right" 
-                      Foreground="WhiteSmoke" Content="Apply to all" 
+                    <CheckBox x:Name="apply_to_all_btn" Grid.Row="1" Grid.Column="4" FontSize="13"
+                      Grid.ColumnSpan="2" HorizontalAlignment="Right" 
+                      Foreground="Black" Content="Apply to all" 
                       Margin="0,13,5,0" Cursor="Hand" ></CheckBox>
 
-        </Grid>
-        <Grid Grid.Column="1">
-            <Label Grid.Column="1">Hi!</Label>
-        </Grid>
+                    <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="10,0,0,0">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10" />
+                            </Style>
+                        </Button.Resources>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="0" Source="/Resources/icons8_cancel_48px.png" Width="36" Height="36" />
+                            <Label Grid.Column="1" Margin="0,5,0,0" FontSize="13"> Click</Label>
+                        </Grid>
+                        
+                    </Button>
+                    
+                </Grid>
+                <Grid Grid.Column="1" Grid.Row="0" Background="#f9f9f9">
 
-    </Grid>
+                    <ToolBarTray Height="34" Margin="40,10,75,0" VerticalAlignment="Top">
+                        <ToolBar Margin="0,2,-455,-18" Background="White" Height="30">
+                            <Button>😁</Button>
+                        </ToolBar>
+                    </ToolBarTray>
+                </Grid>
+                <StatusBar Grid.Row="1" Grid.ColumnSpan="2" Background="#4866d8">
+
+                    <StatusBarItem>
+                        <TextBlock x:Name="statusbar_item_active_servers">Active Servers :</TextBlock>
+                    </StatusBarItem>
+                    <Separator />
+                    <StatusBarItem>
+                        <TextBlock x:Name="statusbar_item_inactive_servers">Inactive Servers :</TextBlock>
+                    </StatusBarItem>
+                    <Separator  />
+                    <StatusBarItem>
+                        <TextBlock x:Name="statusbar_item_created_servers">Created Servers :</TextBlock>
+                    </StatusBarItem>
+                    <StatusBarItem>
+                        <Button></Button>
+                    </StatusBarItem>
+                    <Separator  />
+                    <StatusBarItem HorizontalAlignment="Right">
+                        <TextBlock FontWeight="Bold">Modétor - موديتور</TextBlock>
+                    </StatusBarItem>
+
+                </StatusBar>
+            </Grid>
+        </Grid>
+    </Border>
+    
 </Window>

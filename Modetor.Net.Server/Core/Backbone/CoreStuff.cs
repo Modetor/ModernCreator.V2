@@ -192,13 +192,15 @@ namespace Modetor.Net.Server.Core.Backbone
 
     public enum HttpRequestState : int
     {
+        None,
         PARSE_FAILURE,
         IO_FAILURE,
         GENERIC_FAILURE,
         PERMISSION_FAILURE,
         SECURITY_FAILURE,
         OK,
-        UNKNOWN_RESOURCE_FAILURE
+        UNKNOWN_RESOURCE_FAILURE,
+        PAYLOAD_TOO_LARGE
     }
 
     public enum ServerEventMethod : int
@@ -244,9 +246,7 @@ namespace Modetor.Net.Server.Core.Backbone
         public static string Serialize(this System.Collections.Specialized.NameValueCollection collection)
         {
             if (collection.Count == 0)
-            {
                 return string.Empty;
-            }
 
             StringBuilder str = new();
             
@@ -256,37 +256,24 @@ namespace Modetor.Net.Server.Core.Backbone
                 bool isArray = false;
                 string[] values = collection.GetValues(key).Select(a => {
 
-
                     string[] temp = a.Split(',');
                     if (temp.Length > 1)
-                    {
                         isArray = true;
-                    }
 
                     for (int i = 0; i < temp.Length; i++)
                     {
                         try
                         {
                             if (int.TryParse(temp[i], out int result))
-                            {
                                 temp[i] = result.ToString();
-                            }
                             else if (double.TryParse(temp[i], out double dresult))
-                            {
                                 temp[i] = dresult.ToString();
-                            }
                             else if (float.TryParse(temp[i], out float fresult))
-                            {
                                 temp[i] = fresult.ToString();
-                            }
                             else if (bool.TryParse(temp[i], out bool bresult))
-                            {
                                 temp[i] = bresult ? "true" : "false";
-                            }
                             else
-                            {
-                                temp[i] = temp[i][0] == '"' && temp[i][temp[i] .Length-1] == '"' ? temp[i] : '"' + temp[i] + '"';
-                            }
+                                temp[i] = temp[i][0] == '"' && temp[i][temp[i].Length - 1] == '"' ? temp[i] : '"' + temp[i] + '"';
                         }
                         catch { }
                     }
@@ -295,18 +282,14 @@ namespace Modetor.Net.Server.Core.Backbone
 
                 }).ToArray();
                 if (values.Length == 0)
-                {
                     continue;
-                }
                 else if(isArray)
                 {
                     str.Append($"\"{key}\"").Append(':').Append('[')
                     .Append(string.Join(',', values)).Append(']').Append(',');
                 }
                 else
-                {
-                    str.Append($"\"{key}\"").Append(':')/*.Append('"')*/.Append(values[0])/*.Append('"')*/.Append(',');
-                }
+                    str.Append($"\"{key}\"").Append(':').Append(values[0]).Append(',');
             }
             string w = str.ToString()[..^1]+'}';
 

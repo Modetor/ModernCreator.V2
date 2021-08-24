@@ -5,33 +5,35 @@ namespace Modetor.Net.Server.Core.HttpServers
 {
     public class ActivePipsServer : BaseServer
     {
-        public ActivePipsServer(string ip, int port) : base(ip, port) {
-            
-        }
+        public ActivePipsServer(string ip, int port) : base(ip, port) { }
 
 
         protected override void OnStarted()
         {
             if (Pips == null)
-            {
                 Pips = new ActivePips((int)Settings.Current.PipsCount);
-            }
+
         }
+
         protected override void OnResumed()
         {
-            Pips.Resume();
+            Pips?.Resume();
             base.OnResumed();
         }
         protected override void OnSuspended()
         {
-            Pips.Suspend();
+            Pips?.Suspend();
             base.OnSuspended();
         }
 
         ~ActivePipsServer() {
-            Pips.Kill();
+            Pips?.Kill();
         }
-
+        protected override void OnShutteddown()
+        {
+            Pips?.Kill();
+            base.OnShutteddown();
+        }
         protected internal override void OnRecieveRequest(TcpClient client)
         {
             Pips?.AddWork(async () =>
@@ -47,6 +49,6 @@ namespace Modetor.Net.Server.Core.HttpServers
             Pips?.AddWork(() => action?.Invoke(obj));
         }
 
-        private ActivePips Pips = null;
+        private ActivePips Pips;
     }
 }
