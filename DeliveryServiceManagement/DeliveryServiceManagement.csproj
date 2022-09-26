@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Res\Images\icons8_app_symbol_127px.png" />
+    <None Remove="Res\Images\icons8_home_127px.png" />
+    <None Remove="Res\Images\icons8_info_127px.png" />
+    <None Remove="Res\Images\icons8_people_127px.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Res\Images\icons8_home_127px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Res\Images\icons8_info_127px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Res\Images\icons8_people_127px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <SplashScreen Include="Res\Images\icons8_app_symbol_127px.png" />
+  </ItemGroup>
+
+</Project>

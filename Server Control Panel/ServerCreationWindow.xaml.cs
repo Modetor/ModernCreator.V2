@@ -76,11 +76,11 @@ namespace Server_Control_Panel
                     if(s.Active)
                     {
                         s.StartError -= S_StartError;
-                        new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
+                       /* new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
                         .AddText("Server started")
                         .AddText(s.Address)
                         .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(5));
-
+*/
                         Tag = s;
                         DialogResult = true;
                         Close();

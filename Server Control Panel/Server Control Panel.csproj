@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <RootNamespace>Server_Control_Panel</RootNamespace>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>modetor-server-app-server-icon-release.ico</ApplicationIcon>

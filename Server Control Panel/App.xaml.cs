@@ -17,7 +17,7 @@ namespace Server_Control_Panel
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            ToastNotificationManagerCompat.OnActivated += t =>
+            /*ToastNotificationManagerCompat.OnActivated += t =>
             {
                 ToastArguments args = ToastArguments.Parse(t.Argument);
                 //t.Use
@@ -43,7 +43,7 @@ namespace Server_Control_Panel
                     }
                     //MessageBox.Show(args.Get("action"));
                 });
-            };
+            };*/
         }
 
     }

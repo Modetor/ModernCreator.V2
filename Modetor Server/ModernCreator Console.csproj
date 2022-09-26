@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6</TargetFramework>
     <RootNamespace>Modetor_Server</RootNamespace>
 	  <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

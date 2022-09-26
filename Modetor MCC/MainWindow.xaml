@@ -6,11 +6,11 @@
         xmlns:local="clr-namespace:Modetor_MCC"
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="850" 
-        MinWidth="650" MinHeight="500"
+        MinWidth="650" MinHeight="500"  
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         WindowStartupLocation="CenterScreen"  SizeChanged="Window_SizeChanged">
     <WindowChrome.WindowChrome>
-        <WindowChrome GlassFrameThickness="1,1,1,1" CaptionHeight="32"  ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" />
+        <WindowChrome GlassFrameThickness="2,2,2,2" CaptionHeight="32"  ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}" />
 
     </WindowChrome.WindowChrome>
     <Border x:Name="WindowBorder" BorderThickness="0.5" BorderBrush="{Binding Source={x:Static SystemParameters.WindowGlassBrush}}">
@@ -24,9 +24,9 @@
 
                 <Grid Width="auto" HorizontalAlignment="Right" FlowDirection="LeftToRight">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="45"></ColumnDefinition>
-                        <ColumnDefinition Width="45"></ColumnDefinition>
-                        <ColumnDefinition Width="45"></ColumnDefinition>
+                        <ColumnDefinition Width="45" />
+                        <ColumnDefinition Width="45" />
+                        <ColumnDefinition Width="45" />
                     </Grid.ColumnDefinitions>
 
                     <Label x:Name="MaximizedButton" Style="{StaticResource TitlebarButton}" PreviewMouseUp="MaximizeEvent"  ToolTip="Maximize" Grid.Column="1" Content="&#xE740;" Foreground="Black" HorizontalAlignment="Right" MouseLeave="SizeButtons_MouseLeave" MouseEnter="SizeButtons_MouseEnter"/>
@@ -49,8 +49,10 @@
                 </Grid>
             </Grid>
 
+            
             <wv2:WebView2 Name="webView" Grid.Row="1"></wv2:WebView2>
             <!--Source="http://127.0.0.1/"-->
+            
         </Grid>
 
 

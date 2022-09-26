@@ -147,7 +147,7 @@ namespace Server_Control_Panel
             {
                 current_server?.Resume();
                
-                new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
+                /*new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
                 .AddText("Server " + current_server.Address + " Resumed")
                 .AddText("Press on button below to change state to 'suspend'")
                 .AddButton(
@@ -157,13 +157,13 @@ namespace Server_Control_Panel
                     .SetContent("Suspend")
                     .SetBackgroundActivation()
                 )
-                .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(4));
+                .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(4));*/
             }
             else
             {
                 current_server?.Suspend();
                 
-                new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
+                /*new Microsoft.Toolkit.Uwp.Notifications.ToastContentBuilder()
                 .AddText("Server "+ current_server.Address + " Suspended")
                 .AddText("Press on button below to change state to 'resume'")
                 .AddButton(
@@ -174,7 +174,7 @@ namespace Server_Control_Panel
                     .SetBackgroundActivation()
                 )
                 //.AddButton("Start", Microsoft.Toolkit.Uwp.Notifications.ToastActivationType.Background, "action")
-                .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(4));
+                .Show(t => t.ExpirationTime = DateTime.Now.AddSeconds(4));*/
             }
                 
         }
