@@ -6,4 +6,22 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="server\components\.nomedia" />
+    <None Remove="server\configuration\config.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="server\components\.nomedia">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="server\configuration\config.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EmbededServerInterface\EmbededServerInterface.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EmbededServer\EmbededServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Res\Images\icons8_home_127px.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>

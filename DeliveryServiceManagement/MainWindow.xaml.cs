@@ -146,5 +146,9 @@ namespace DeliveryServiceManagement
             UIElement element = (UIElement)sender;
             seperator.SetValue(Grid.ColumnProperty, (int)element.GetValue(Grid.ColumnProperty));
         }
+
+
+
+        
     }
 }

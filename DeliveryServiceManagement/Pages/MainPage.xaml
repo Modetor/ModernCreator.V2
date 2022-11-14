@@ -9,6 +9,6 @@
       Title="MainPage">
 
     <Grid>
-        <Button Content="Hi" Width="200" Height="50" />
+        <Button Content="Hi" Width="200" Height="50" Click="Button_Click" />
     </Grid>
 </Page>

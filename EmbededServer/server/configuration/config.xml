@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<Configuration>
+	<Port>5722</Port>
+	<Address>all</Address>
+	<MaxClientConnectionsAllowed>20</MaxClientConnectionsAllowed>
+	<PlatformsAllowedToConnect>all</PlatformsAllowedToConnect>
+	<SupportedApplications>
+		<Application Name="DeliveryServiceManagement" MinVersion="1.5.7" />
+		<Application Name="ModetorDB" MinVersion="0.5.7" />
+	</SupportedApplications>
+	<Components>
+		<DLL>
+			<EntryPoint>comp1.X</EntryPoint>
+			<Path>server/components/comp1.dll</Path>
+		</DLL>
+	</Components>
+</Configuration>
+

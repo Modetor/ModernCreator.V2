@@ -8,5 +8,7 @@ namespace EmbededServer
 {
     internal class Component
     {
+        public Type Type { get; set; }
+        public string Name { get; set; }
     }
 }
