@@ -6,19 +6,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 namespace EmbededServer
 {
-    public static class XMLDeserializer
-    {
-        public static T? Deserialize<T>(string xmlString)
-        {
-            if (xmlString == null) return default;
-            System.Xml.Serialization.XmlSerializer? serializer
-                        = new System.Xml.Serialization.XmlSerializer(typeof(T));
-            using (var reader = new StringReader(xmlString))
-            {
-                return (T)serializer?.Deserialize(reader);
-            }
-        }
-    }
+    
 
     public static class ConfigurationLoader
     {
@@ -27,7 +15,7 @@ namespace EmbededServer
             Configuration config;
 
             using(StreamReader reader = new StreamReader(config_file))
-                config = XMLDeserializer.Deserialize<Configuration>(reader.ReadToEnd());
+                config = XMLHelper.Deserialize<Configuration>(reader.ReadToEnd());
 
             return config;
         }

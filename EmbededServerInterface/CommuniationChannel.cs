@@ -1,4 +1,6 @@
 ﻿using System.Net.Sockets;
+using System.Text;
+using System.Xml.Serialization;
 
 namespace EmbededServerInterface
 {
@@ -24,10 +26,10 @@ namespace EmbededServerInterface
     }
     public struct Message
     {
-        Header Header;
-        byte[] Payload;
+        public Header Header;
+        public byte[] Payload;
 
-        private static int I_EndOfHeader(byte[] data)
+        private static int I_EndOfHeader(ref byte[] data)
         {
             int index = -1, found = 0; ;
             char wanted = '\n';
@@ -44,6 +46,11 @@ namespace EmbededServerInterface
                         break;
                     }
                 }
+                if(found > 0 && data[i] != wanted)
+                {
+                    wanted = '\n';
+                    found = 0;
+                }
                 
             }
             return index;
@@ -51,10 +58,26 @@ namespace EmbededServerInterface
         public static Message From(byte[] data)
         {
 
-            Message message = new Message();
-            message.Header = new Header();
-
+            Message message = new();
+            int headerLastChar = I_EndOfHeader(ref data);
+            message.Header = XMLHelper.Deserialize<Header>(Encoding.UTF8.GetString(data[0..headerLastChar]));
+            message.Payload = data[(headerLastChar + 4)..];
+            
             return message;
+        }
+
+        public string SerializeHeader()
+        {
+            return XMLHelper.Serialize(Header);
+        }
+
+        public byte[] ToByteArray()
+        {
+            byte[] headerBytes = Encoding.UTF8.GetBytes(SerializeHeader() + "\n\r\n\r");
+            byte[] buffer = new byte[headerBytes.Length + Payload.Length];
+            headerBytes.CopyTo(buffer, 0);
+            Payload.CopyTo(buffer, headerBytes.Length);
+            return buffer;
         }
     }
     public interface ICommuniationChannel
@@ -79,8 +102,9 @@ namespace EmbededServerInterface
         public CommuniationChannel(Session session)
         {
             Session = session;
-            this.tcpClient = Session.Connection;
-            this.stream = tcpClient.GetStream();
+            messagesQueue = new();
+            tcpClient = Session.Connection;
+            stream = tcpClient.GetStream();
             CancellationTokenSource = new CancellationTokenSource();    
         }
 
@@ -91,14 +115,46 @@ namespace EmbededServerInterface
         public void MessagingLoop()
         {
             CancellationToken token = CancellationTokenSource.Token;
-            Task.Factory.StartNew(() =>
+            
+            if(Session.Connection.Equals("Both"))
             {
-                while(true)
+                while (true)
                 {
-                    if (token.IsCancellationRequested) break;
+                    if(SpinWait.SpinUntil(() => stream.DataAvailable, 100))
+                    {
+                        // read operation
+                        MetaInfo info = TcpConnectionV1.ReadMetaData(stream);
+                        if(info.Length == 0)
+                        {
 
+                        }
+                        else
+                        {
+                            byte[] buffer = new byte[info.Length];
+                            stream.Read(buffer, 0, buffer.Length);
+                            Message message = Message.From(buffer);
+                        }
+                        
+
+                    }
+                    else if(SpinWait.SpinUntil(() => messagesQueue.Count > 0, 100))
+                    {
+                        // send operation
+                    }
+                    else
+                        Thread.Sleep(0);
                 }
-            }, token);
+            }
+            else if(Session.Connection.Equals("Server-Client"))
+            {
+
+            }
+            else if (Session.Connection.Equals("Client-Server"))
+            {
+
+            }
+
+            
         }
         public void Start()
         {
@@ -204,10 +260,26 @@ namespace EmbededServerInterface
             throw new NotImplementedException();
         }
 
+
+        internal bool DataToBeRecieved => stream.DataAvailable;
+        internal bool DataToBeSent => false;
+
+
+        private readonly Dictionary<int, Message> messagesQueue;
         private readonly TcpClient tcpClient;
         private readonly NetworkStream stream;
         private byte[] buffer;
         public Session Session;
         public CancellationTokenSource CancellationTokenSource;
+
+
+
+
+
+
+        public static SendMessage(Message message)
+        {
+            
+        }
     }
 }

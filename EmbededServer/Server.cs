@@ -73,20 +73,18 @@ namespace EmbededServer
                         }
 
                         Session session = new Session(client, tcpClient);
-                        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-                        //cancellationTokenSource.Token.Register(() => tcpClient?.Close());
-                        
+                        CancellationTokenSource cancellationTokenSource = new();                        
                         if (!Components.ContainsKey(client.Rout))
                         {
                             Console.Error.WriteLine("Rout not found");
                             //tcpClient.Close();
                             CommuniationChannel component = new(session);
                             component.Start();
-                        }
-                        else
+                        } 
+                         else
                         {
                             Component component = Components[client.Rout];
-                            if (Activator.CreateInstance(component.Type, new { client }) is not CommuniationChannel channel)
+                            if (Activator.CreateInstance(component.Type, new { session }) is not CommuniationChannel channel)
                                 tcpClient.Close();
                             else
                             {

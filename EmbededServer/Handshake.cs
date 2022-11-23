@@ -36,34 +36,37 @@ namespace EmbededServer
                 //try
                 {
                     NetworkStream stream = client.GetStream();
-                    //StreamReader reader = new(stream, Encoding.UTF8, false, -1, true);
-                    //StreamWriter writer = new(stream,Encoding.UTF8,-1, true);
 
-                    /**/
 
-                    (MetaInfo, ulong) metaData = TcpConnectionV1.ReadMetaData(stream);
 
-                    byte[] buffer = new byte[metaData.Item2];
+                    MetaInfo metaData = TcpConnectionV1.ReadMetaData(stream);
+
+                    byte[] buffer = new byte[metaData.Length];
                     stream.Read(buffer, 0, buffer.Length);
                     EmbededServerInterface.Client client_t =
-                        XMLDeserializer.Deserialize<EmbededServerInterface.Client>(Encoding.UTF8.GetString(buffer));
-                    Console.WriteLine("");
+                        XMLHelper.Deserialize<Client>(Encoding.UTF8.GetString(buffer));
 
-                    /*byte[] bufferSizeBytes = new byte[5];
 
-                    stream.Read(bufferSizeBytes, 0, bufferSizeBytes.Length);
-                    UInt32 num = BitConverter.ToUInt32(bufferSizeBytes[1..4], 0);*/
-
-                    // 
-                    //string text = reader.ReadToEnd();
-                    byte response = 0;
-                    /*EmbededServerInterface.Client client_t = 
-                        XMLDeserializer.Deserialize<EmbededServerInterface.Client>(text);
-                    reader.Close();*/
+                    string errMessage = string.Empty;
+                    byte[] respondBuffer;
 
                     if (!configuration.SupportedApplications.IsSupportedApplication(client_t.Application))
+                        errMessage = "Unsopported client app";
+                    else
+                        receivedClient = client_t; // success
                     
-                    stream.WriteByte(response);
+                    respondBuffer = TcpConnectionV1.BuildMetaInfoAndLength(
+                        true, StreamDataType.Text, PacketType.Handshake, (ulong) errMessage.Length
+                    );
+                    stream.Write(respondBuffer, 0, 12);
+                    
+                    if(errMessage.Length != 0)
+                    {
+                        respondBuffer = Encoding.UTF8.GetBytes(errMessage);
+                        stream.Write(respondBuffer, 0, respondBuffer.Length);
+                    }
+
+                    stream.Flush();
 
                 }
 

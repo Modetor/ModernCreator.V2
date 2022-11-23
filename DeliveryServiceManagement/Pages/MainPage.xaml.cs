@@ -30,9 +30,9 @@ namespace DeliveryServiceManagement.Pages
     {
         readonly string handshake = @"<Client Connection=""both | server-talk | client-talk"">
     <ID>489348923</ID>
-    <Rout>/Main</Rout>
+    <Rout>/xMain</Rout>
     <User>Mohammad</User>
-    <Application>A</Application>
+    <Application>DeliveryServiceManagement</Application>
     <ApplicationVersion>12.6</ApplicationVersion>
     <DeviceInfo>
         <DeviceName>Mohammad</DeviceName>
@@ -94,15 +94,23 @@ namespace DeliveryServiceManagement.Pages
             stream.Flush();
             stream.Write(bytes, 0, bytes.Length);
 
-            int response = stream.ReadByte();
-            if(response == -1)
+            MetaInfo metaData = TcpConnectionV1.ReadMetaData(stream);
+
+            
+            if(metaData.Length == 0)
             {
-                Debug.WriteLine("Errrror");
+                Debug.WriteLine("Successfully connected");
+            }
+            else
+            {
+                byte[] buffer = new byte[metaData.Length];
+                stream.Read(buffer, 0, buffer.Length);
+                Debug.WriteLine("Message/ {0}", Encoding.UTF8.GetString(buffer));
             }
             //if (string.IsNullOrEmpty(serverDecision)) return;
 
 
-            Console.WriteLine("Client : \n{0}", response);
+            //Console.WriteLine("Client : \n{0}", response);
 
             stream.Write(Encoding.UTF8.GetBytes(message));
 
