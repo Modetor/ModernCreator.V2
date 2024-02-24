@@ -197,6 +197,7 @@ namespace Modetor.Net.Server.Core.Backbone
                         virtualLink.Enabled = (bool)vlink.Enabled;
                         virtualLink.Link = (string)vlink.Link;
                         virtualLink.Target = (string)vlink.Target;
+                        virtualLink.Redirect = (bool)vlink.Redirect;
 
                         VirtualLinks.Add(virtualLink.Link, virtualLink);
                     }
@@ -377,7 +378,7 @@ namespace Modetor.Net.Server.Core.Backbone
 
     public struct VirtualLinks
     {
-        public bool Enabled;
+        public bool Enabled, Redirect;
         public string Link, Target;
     }
 

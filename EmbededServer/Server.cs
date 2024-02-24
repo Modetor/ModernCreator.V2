@@ -78,13 +78,13 @@ namespace EmbededServer
                         {
                             Console.Error.WriteLine("Rout not found");
                             //tcpClient.Close();
-                            CommuniationChannel component = new(session);
+                            CommunicationChannel component = new(session);
                             component.Start();
                         } 
                          else
                         {
                             Component component = Components[client.Rout];
-                            if (Activator.CreateInstance(component.Type, new { session }) is not CommuniationChannel channel)
+                            if (Activator.CreateInstance(component.Type, new { session }) is not CommunicationChannel channel)
                                 tcpClient.Close();
                             else
                             {

@@ -364,7 +364,30 @@ namespace Modetor.Net.Server.Core.HttpServers
         {
             if (req.Repository.HasConnectionHandler)
             {
-                PythonRunner.Run(req, new HttpRespondHeader(), true);
+                if(req.Repository.ConnectionHandler != null)
+                {
+                    if(req.Repository.ConnectionHandler.EndsWith(".dll"))
+                    {
+                        HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
+                        object? r = req.Repository.ConnectionHandlerObject?.Handle(stream, req, res);
+                        if(r != null && !res.DidRespond())
+                        {
+                            try {
+                                stream?.Write((byte[])r);
+                                stream?.Flush();
+                            }
+                            catch(Exception ex) {
+                                ErrorLogger.WithTrace(Settings, string.Format("[Error][Server request handler => Respond_OK()] : exception-message : {0}.\nstacktrace : {1}\n", ex.Message, ex.StackTrace), GetType());
+                            }
+                        }
+                        //Console.WriteLine(r?.ToString());
+                    }
+                    else if(req.Repository.ConnectionHandler.EndsWith(".py"))
+                    {
+                        PythonRunner.Run(req, new HttpRespondHeader(), true);
+                    }
+                    await stream.DisposeAsync();
+                }
                 await stream.DisposeAsync();
                 client.Close();
             }

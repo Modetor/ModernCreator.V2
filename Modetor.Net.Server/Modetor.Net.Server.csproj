@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
    
   <PropertyGroup>
-    <TargetFramework>net6</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
 	  <RuntimeIdentifiers>win-x64;win-x86;</RuntimeIdentifiers>
 	  <SignAssembly>false</SignAssembly>
 	  <AssemblyOriginatorKeyFile>x.snk</AssemblyOriginatorKeyFile>
@@ -27,6 +27,10 @@
     <PackageReference Include="HttpMultipartParser" Version="5.0.0" />
     <PackageReference Include="IronPython" Version="2.7.11" />
     <PackageReference Include="MySql.Data" Version="8.0.23" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="M:\Projects\GaduationProject\ConnectionHandler\ConnectionHandler.csproj" />
   </ItemGroup>
 
   <ItemGroup>

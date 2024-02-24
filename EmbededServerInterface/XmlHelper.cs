@@ -11,7 +11,7 @@ namespace EmbededServerInterface
                         = new System.Xml.Serialization.XmlSerializer(typeof(T));
             using (var reader = new StringReader(xmlString))
             {
-                return (T)serializer?.Deserialize(reader);
+                return (T)serializer.Deserialize(reader);
             }
         }
 

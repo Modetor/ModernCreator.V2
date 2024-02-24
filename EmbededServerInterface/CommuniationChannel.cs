@@ -80,26 +80,24 @@ namespace EmbededServerInterface
             return buffer;
         }
     }
-    public interface ICommuniationChannel
+
+
+    /// <summary>
+    ///     An interface to Communi
+    /// </summary>
+    public interface ICommunicationChannel
     {
-        void OnBeforeStart();
-        void Start();
-        void Stop();
-        void OnBeforeStop();
-        void MessagingLoop();
-        void OnMessageReceived(Message message);
-        void OnMessageSent(Message message);
-        void OnRawDataReceived(byte[] data);
         string GetDefinedRout();
-        void Send();
-        void SetHeader(Header header);
-        void SetPayload(byte[] data);
+
+        void OnStart();
+        void OnStop();
+
     }
 
-    public class CommuniationChannel : ICommuniationChannel
+    public class CommunicationChannel : ICommunicationChannel
     {
         public static readonly string DEFAULT_ROUT = "";
-        public CommuniationChannel(Session session)
+        public CommunicationChannel(Session session)
         {
             Session = session;
             messagesQueue = new();
@@ -109,9 +107,8 @@ namespace EmbededServerInterface
         }
 
         public string GetDefinedRout() => DEFAULT_ROUT;
-        public void OnRawDataReceived(byte[] data) { }
-        public void OnMessageReceived(Header header, byte[] body) { }
-        public void OnMessageSent(Header header, byte[] body) { }
+        public void OnStart() { }
+        public void OnStop() { }
         public void MessagingLoop()
         {
             CancellationToken token = CancellationTokenSource.Token;
@@ -161,104 +158,7 @@ namespace EmbededServerInterface
             OnStart();
             MessagingLoop();
         }
-        public void OnStart() { Console.WriteLine("[abs]Started"); }
-        public void ClearBody() {}
-
-        public void ClearBuffer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ClearHeader()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GetBody()
-        {
-            throw new NotImplementedException();
-        }
-
-        public byte[] GetBuffer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Header GetHeader()
-        {
-            throw new NotImplementedException();
-        }
-
-        public long GetPacketSize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Send(TcpClient client)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SendAsync(TcpClient client)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetBody(byte[] body)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetBuffer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetHeader(Header header)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetPacketSize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Send()
-        {
-        }
-
-        public void OnBeforeStart()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Stop()
-        {
-            OnBeforeStop();
-            CancellationTokenSource.Cancel();
-            CancellationTokenSource.Dispose();
-        }
-
-        public void OnBeforeStop()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnMessageReceived(Message message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnMessageSent(Message message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetPayload(byte[] data)
-        {
-            throw new NotImplementedException();
-        }
+        
 
 
         internal bool DataToBeRecieved => stream.DataAvailable;
@@ -275,11 +175,5 @@ namespace EmbededServerInterface
 
 
 
-
-
-        public static SendMessage(Message message)
-        {
-            
-        }
     }
 }

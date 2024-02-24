@@ -8,6 +8,8 @@ III
 
 
 using HttpMultipartParser;
+using Newtonsoft.Json;
+using Renci.SshNet.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,6 +33,7 @@ namespace Modetor.Net.Server.Core.Backbone
         private static readonly string CONTENT_TYPE = "Content-Type";
         private static readonly string FORMDATA_BOUNDARY = "multipart/form-data; boundary=";
         private static readonly string FORMDATA_POST_ENCODED = "application/x-www-form-urlencoded";
+        private static readonly string FORMDATA_POST_JSON = "application/json";
 
 
         public HttpRequestHeader(HttpRequestHeader req, string file = null)
@@ -263,13 +266,27 @@ namespace Modetor.Net.Server.Core.Backbone
                         ErrorLogger.WithTrace(Server.Settings, string.Format("[Warning][Server error => ReadContentHeader()] : cannot access this file. permission denied"), GetType());
                         return HttpRequestState.SECURITY_FAILURE;
                     }
-                    
+
 
                     if (HeaderKeys.ContainsKey(MODETOR_SERVER_BOUNDARY))
                     {
-                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("----") || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED))
+                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("----")
+                            || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED)
+                            || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_BOUNDARY)
+                            || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_JSON))
                         {
-                            if (Repository.SupportUploads)
+                            if(HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_JSON))
+                            {
+                                string json = Encoding.UTF8.GetString(data);
+                                Dictionary<string, string> dic = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                                foreach(string key in dic.Keys)
+                                {
+                                    if(!Parameters.AllKeys.Contains(key))
+                                        Parameters.Add(key, dic[key]);
+                                }
+                                Console.WriteLine(json);
+                            }
+                            else if (Repository.SupportUploads)
                             {
                                 MultipartFormDataParser parser;
                                 try { parser = await MultipartFormDataParser.ParseAsync(new MemoryStream(data)); }
@@ -295,12 +312,13 @@ namespace Modetor.Net.Server.Core.Backbone
 
                                 foreach (ParameterPart item in parser.Parameters)
                                 {
-                                    Parameters.Add(item.Name, item.Data);
+                                    if (!Parameters.AllKeys.Contains(item.Name))
+                                        Parameters.Add(item.Name, item.Data);
                                 }
                             }
                             else
                             {
-                                ErrorLogger.WithTrace(Server.Settings, "uploaded data(usualy it's form data) just dropped due to Repository.SupportUploads is set to false", GetType());
+                                ErrorLogger.WithTrace(Server.Settings, "uploaded data(usually it is a form data) just dropped due to Repository.SupportUploads is set to false", GetType());
                             }
 
                         }
@@ -376,6 +394,10 @@ namespace Modetor.Net.Server.Core.Backbone
                             {
                                 HeaderKeys.Add(MODETOR_SERVER_BOUNDARY, FORMDATA_POST_ENCODED);
                             }
+                            else if (parts[1].StartsWith(FORMDATA_POST_JSON))
+                            {
+                                HeaderKeys.Add(MODETOR_SERVER_BOUNDARY, FORMDATA_POST_JSON);
+                            }
                         }
                         HeaderKeys.Add(parts[0], parts[1]);
                     }
@@ -438,7 +460,13 @@ namespace Modetor.Net.Server.Core.Backbone
                     {
                         isUsingVirtualLink = true;
                         HeaderKeys.Remove("Resolved-Location");
-                        HeaderKeys.Add("Resolved-Location", vlink.Target + "?" + query);
+                        if(vlink.Redirect)
+                            HeaderKeys.Add("Resolved-Location", vlink.Target + "?" + query);
+                        else
+                        {
+                            isUsingVirtualLink = false;
+                            filename = vlink.Target;
+                        }
                     }
                 }
             }
@@ -487,10 +515,8 @@ namespace Modetor.Net.Server.Core.Backbone
         }
         public void ClearParameters() => Parameters.Clear();
         public bool HasParameters => Parameters.Count > 0;
-        public bool ContainParameter(string p)
-        {
-            return Parameters.AllKeys?.Contains(p) ?? false;
-        }
+        public bool ContainParameter(string p) => Parameters.AllKeys?.Contains(p) ?? false;
+        public string GetParameter(string p) => Parameters.Get(p) ?? null;
         internal void DeleteUploadFiles()
         {
             try

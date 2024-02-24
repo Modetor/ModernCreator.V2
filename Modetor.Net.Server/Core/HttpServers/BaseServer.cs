@@ -140,11 +140,16 @@ namespace Modetor.Net.Server.Core.HttpServers
                 Listener.Start();
 
                 // REPOSITORIES STARTUP SECTION GOES HERE :::
+                // LOADING DLL FILES AS WELL
                 foreach(string name in Settings.Repositories)
                 {
                     Rule rule = Settings.RepositoriesRules[name];
                     if(rule.HasStartupFile)
                         PythonRunner.RunStartups(this, rule);
+
+                    if(rule.HasConnectionHandler && rule.ConnectionHandler.EndsWith(".dll"))
+                        rule.LoadConnectionHandler(this);
+
                 }
 
                 // SETUP SERVER'S TIMER
@@ -380,7 +385,7 @@ namespace Modetor.Net.Server.Core.HttpServers
             {
                 Backbone.HttpRequestHeader req = null;
                 NetworkStream stream = client.GetStream();
-                req = new Backbone.HttpRequestHeader(client, this, false);
+                req = new Backbone.HttpRequestHeader(client, this, true);
                 
                 
 

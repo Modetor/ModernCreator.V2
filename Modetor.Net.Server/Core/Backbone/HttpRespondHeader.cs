@@ -23,7 +23,7 @@ namespace Modetor.Net.Server.Core.Backbone
                 throw new NotSupportedException(string.Format("[HttpRequestHeader].Repository is Corrupted!"));
             }
 
-            HttpRespondHeader respond = new HttpRespondHeader();
+            HttpRespondHeader respond = new();
              
             if(requestHeader.HeaderKeys.ContainsKey("Resolved-Location")) /* [DUPRECATED SCOPE] */
             {
@@ -238,7 +238,7 @@ namespace Modetor.Net.Server.Core.Backbone
                     HasUploadFiles = requestHeader.HasUploadedFiles,
                     HTTPMethod = requestHeader.HttpMethod.ToString(),
                     HTTPVersion = requestHeader.HttpVersion.ToString(),
-                    ModetorServerVersion = HttpRespondHeader.CurrentServerVersion.ToString()
+                    ModetorServerVersion = CurrentServerVersion.ToString()
                 },
                 Server = new
                 {

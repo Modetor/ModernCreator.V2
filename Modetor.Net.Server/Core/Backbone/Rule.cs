@@ -7,6 +7,9 @@ III
 
 
 using System;
+using System.Reflection;
+using Modetor.Net.Server.Core.HttpServers;
+
 namespace Modetor.Net.Server.Core.Backbone
 {
     public class Rule
@@ -41,6 +44,7 @@ namespace Modetor.Net.Server.Core.Backbone
             Path = UploadDirectory = ConnectionHandler = string.Empty; PrivateDirectories = Empty;
             WebSocketIdelTimeout = WebSocketIdelChances = -1; ServerEventMethod = ServerEventMethod.PUSH;
             Registry = new System.Collections.Generic.Dictionary<string, dynamic>(); StartupFile = null;
+            ConnectionHandlerObject = null;
         }
 
         public void SetName(string n) => Name = n;
@@ -170,7 +174,28 @@ namespace Modetor.Net.Server.Core.Backbone
 
             //}
         }
+        public void LoadConnectionHandler(BaseServer server)
+        {
+            if (ConnectionHandlerObject != null)
+                return;
 
+            try
+            {
+                Assembly DLL = Assembly.LoadFile(ConnectionHandler);
+                Type[] tt = DLL.GetExportedTypes();
+                Type? type = DLL.GetType("CH.Handler");
+                if (type == null) throw new Exception("Operation aborted. Invalid component");
+                //MethodInfo mi = type.GetMethod("GetReference", BindingFlags.Static | BindingFlags.Public) ?? throw new MissingMemberException("Cannot find GetReference method");
+                object component = Activator.CreateInstance(type, new object[] { server });// ?? throw new NullReferenceException("Failed to load instance of ConnectionHandler");
+                if(component != null)
+                    ConnectionHandlerObject = component;
+            }
+            catch(Exception exp)
+            {
+                ErrorLogger.WithTrace(server.Settings, string.Format("[Error][Server request handler => ProcessRequestHeader()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+            }
+
+        }
 
         #region Properties
         public string Name { get; private set; } 
@@ -215,6 +240,8 @@ namespace Modetor.Net.Server.Core.Backbone
 
         // added in 31.7.2021
         public bool AllowCrossRepositoriesRequests { get; private set; }
+        // added in 19.2.2024
+        public dynamic? ConnectionHandlerObject { get; private set; }
         #endregion
     }
 
