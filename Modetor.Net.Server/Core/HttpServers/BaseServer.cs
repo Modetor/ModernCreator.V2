@@ -8,6 +8,7 @@ III
 #define XY
 
 using Modetor.Net.Server.Core.Backbone;
+using NetBase;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -16,7 +17,7 @@ using System.Threading;
 
 namespace Modetor.Net.Server.Core.HttpServers
 {
-    public abstract partial class BaseServer
+    public abstract partial class BaseServer : NetBase.IBaseServer
     {
         public static Dictionary<string, BaseServer> Servers { get; private set; } = new();
         public static bool IsValidIP(string ip)
@@ -309,6 +310,17 @@ namespace Modetor.Net.Server.Core.HttpServers
             Servers.Remove($"{IP}:{Port}");
         }
 
+        public static void ShutdownAll()
+        {
+            foreach(BaseServer s in Servers.Values)
+            {
+                s.Shutdown();
+            }
+        }
+        public void LogError(string exp)
+        {
+            ErrorLogger.WithTrace(Settings, exp, GetType());
+        }
 
         protected internal void SetupServerProcedure(TcpClient client)
         {
@@ -387,8 +399,6 @@ namespace Modetor.Net.Server.Core.HttpServers
                 NetworkStream stream = client.GetStream();
                 req = new Backbone.HttpRequestHeader(client, this, true);
                 
-                
-
                 client.ReceiveTimeout = Settings.ReceiveTimeout;
                 client.SendTimeout = Settings.SendTimeout;
 
@@ -544,7 +554,10 @@ namespace Modetor.Net.Server.Core.HttpServers
             
         }
 
-        
+        public dynamic GetSettings()
+        {
+            return Settings.Current;
+        }
 
         ~BaseServer()
         {
@@ -591,6 +604,10 @@ namespace Modetor.Net.Server.Core.HttpServers
             {
                 BlockedClients.Add(client);
             }
+        }
+        public void UnblockClient(string client)
+        {
+            BlockedClients.Remove(client);
         }
 
         public static string[] GetNeworkIPs()

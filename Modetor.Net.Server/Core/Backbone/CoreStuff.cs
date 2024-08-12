@@ -185,10 +185,7 @@ namespace Modetor.Net.Server.Core.Backbone
     {
         GET, POST, PUT, PATCH, DELETE, QUERY, UNKNOWN
     }
-    public enum HttpVersion
-    {
-        HTTP1_0, HTTP1_1, HTTP2_0, UNKNOWN
-    }
+    
 
     public enum HttpRequestState : int
     {
@@ -203,10 +200,7 @@ namespace Modetor.Net.Server.Core.Backbone
         PAYLOAD_TOO_LARGE
     }
 
-    public enum ServerEventMethod : int
-    {
-        PUSH, LOOP
-    }
+    
     public struct ModetorServerVersion
     {
         public static readonly ModetorServerVersion V1_0 = new("Modetor.Net.Server/1.0");

@@ -1,6 +1,8 @@
 ﻿using Modetor.Net.Server.Core.Backbone;
+using NetBase;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -368,19 +370,30 @@ namespace Modetor.Net.Server.Core.HttpServers
                 {
                     if(req.Repository.ConnectionHandler.EndsWith(".dll"))
                     {
-                        HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
-                        object? r = req.Repository.ConnectionHandlerObject?.Handle(stream, req, res);
-                        if(r != null && !res.DidRespond())
+                        
+                        try
                         {
-                            try {
-                                stream?.Write((byte[])r);
-                                stream?.Flush();
+                            if(req.IsServerSentEventRequest())
+                            {
+                                ProcessServerEventRequest(client, req);
                             }
-                            catch(Exception ex) {
-                                ErrorLogger.WithTrace(Settings, string.Format("[Error][Server request handler => Respond_OK()] : exception-message : {0}.\nstacktrace : {1}\n", ex.Message, ex.StackTrace), GetType());
+                            else
+                            {
+                                HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
+                                object r = req.Repository.ConnectionHandlerObject?.Handle(stream, req, res);
+                                if (r != null && !res.DidRespond())
+                                {
+                                    stream?.Write((byte[])r);
+                                    stream?.Flush();
+                                }
                             }
+                            
                         }
-                        //Console.WriteLine(r?.ToString());
+                        catch (Exception ex)
+                        {
+                            ErrorLogger.WithTrace(Settings, string.Format("[Error][Server request handler => Respond_OK()] : exception-message : {0}.\nstacktrace : {1}\n", ex.Message, ex.StackTrace), GetType());
+                        }
+                        
                     }
                     else if(req.Repository.ConnectionHandler.EndsWith(".py"))
                     {
@@ -393,7 +406,7 @@ namespace Modetor.Net.Server.Core.HttpServers
             }
             else
             {
-                if (req.IsWebsocketUpgradRequest())
+                if (req.IsWebSocketUpgradeRequest())
                 {
                     if (req.Repository.AllowWebSocket)
                     {
@@ -418,12 +431,13 @@ namespace Modetor.Net.Server.Core.HttpServers
                 {
                     if(req.Repository.AllowServerEvent)
                     {
-                        if (req.AbsoluteFilePath.EndsWith(".py"))
+                        ProcessServerEventRequest(client, req);
+                        /*if (req.AbsoluteFilePath.EndsWith(".py"))
                         {
                             ProcessServerEventRequest(client, req);
                         }
                         else
-                            SendBadRequestAndClose(client, req, stream);
+                            SendBadRequestAndClose(client, req, stream);*/
                     }
                     else
                         SendBadRequestAndClose(client, req, stream);
@@ -455,20 +469,37 @@ namespace Modetor.Net.Server.Core.HttpServers
 
         private  void ProcessServerEventRequest(TcpClient client, HttpRequestHeader req)
         {
-            if (req.Repository.ServerEventMethod == ServerEventMethod.LOOP)
+            if (req.Repository.ConnectionHandler.EndsWith(".dll"))
             {
-                new System.Threading.Thread(() =>
+                HttpRespondHeader res = HttpRespondHeader.GenerateRespond(req, this);
+                try
                 {
-                    while(Active)
-                    {
-                        PythonRunner.ServerEventRun(req);
-                    }
-                    GC.Collect();
-                })
-                { IsBackground = true, Priority = System.Threading.ThreadPriority.Lowest }.Start();
+                    object r = req.Repository.ConnectionHandlerObject?.HandleServerSentEvent(req.Repository.ServerEventMethod, req.Client.GetStream(), req, res);
+                    Console.WriteLine("Say someh!");
+                }
+                catch (Exception ex)
+                {
+                    ErrorLogger.WithTrace(Settings, string.Format("[Error][Server request handler => Respond_OK()] : exception-message : {0}.\nstacktrace : {1}\n", ex.Message, ex.StackTrace), GetType());
+                }
+
             }
             else
-                PythonRunner.ServerEventRun(req);
+            {
+                if (req.Repository.ServerEventMethod == ServerEventMethod.LOOP)
+                {
+                    new System.Threading.Thread(() =>
+                    {
+                        while (Active)
+                        {
+                            PythonRunner.ServerEventRun(req);
+                        }
+                        GC.Collect();
+                    })
+                    { IsBackground = true, Priority = System.Threading.ThreadPriority.Lowest }.Start();
+                }
+                else
+                    PythonRunner.ServerEventRun(req);
+            }
         }
         private  void Respond_SECURITY_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream);
         private  void Respond_PERMISSION_FAILURE(HttpRequestHeader req, NetworkStream stream, TcpClient client) => SendBadRequestAndClose(client, req, stream, HttpRespondState.FORBIDDEN);

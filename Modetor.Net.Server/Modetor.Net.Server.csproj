@@ -24,13 +24,14 @@
 
   <ItemGroup>
     <PackageReference Include="ChakraCore.NET" Version="1.3.3" />
-    <PackageReference Include="HttpMultipartParser" Version="5.0.0" />
+    <PackageReference Include="HttpMultipartParser" Version="8.4.0" />
     <PackageReference Include="IronPython" Version="2.7.11" />
     <PackageReference Include="MySql.Data" Version="8.0.23" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="M:\Projects\GaduationProject\ConnectionHandler\ConnectionHandler.csproj" />
+    <ProjectReference Include="M:\Projects\GaduationProject\NetBase\NetBase.csproj" />
   </ItemGroup>
 
   <ItemGroup>

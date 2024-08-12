@@ -7,12 +7,14 @@ III
 
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Modetor.Net.Server.Core.HttpServers;
+using NetBase;
 
 namespace Modetor.Net.Server.Core.Backbone
 {
-    public class Rule
+    public class Rule : NetBase.IRule
     {
         private static string[] Empty = new string[] { };
         public static Rule Corrupted
@@ -183,7 +185,7 @@ namespace Modetor.Net.Server.Core.Backbone
             {
                 Assembly DLL = Assembly.LoadFile(ConnectionHandler);
                 Type[] tt = DLL.GetExportedTypes();
-                Type? type = DLL.GetType("CH.Handler");
+                Type type = DLL.GetType("CH.Handler");
                 if (type == null) throw new Exception("Operation aborted. Invalid component");
                 //MethodInfo mi = type.GetMethod("GetReference", BindingFlags.Static | BindingFlags.Public) ?? throw new MissingMemberException("Cannot find GetReference method");
                 object component = Activator.CreateInstance(type, new object[] { server });// ?? throw new NullReferenceException("Failed to load instance of ConnectionHandler");
@@ -241,7 +243,9 @@ namespace Modetor.Net.Server.Core.Backbone
         // added in 31.7.2021
         public bool AllowCrossRepositoriesRequests { get; private set; }
         // added in 19.2.2024
-        public dynamic? ConnectionHandlerObject { get; private set; }
+        public dynamic ConnectionHandlerObject { get; private set; }
+
+        Dictionary<string, dynamic> IRule.Registry => throw new NotImplementedException();
         #endregion
     }
 

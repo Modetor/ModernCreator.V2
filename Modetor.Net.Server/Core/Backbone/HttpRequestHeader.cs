@@ -6,10 +6,9 @@ III
 
 
 
-
 using HttpMultipartParser;
+using NetBase;
 using Newtonsoft.Json;
-using Renci.SshNet.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +18,7 @@ using System.Text;
 
 namespace Modetor.Net.Server.Core.Backbone
 {
-    public class HttpRequestHeader
+    public class HttpRequestHeader : NetBase.IHttpRequestHeader
     {
         public static byte[] ContentSplitter = new byte[] { 13, 10, 13, 10 };
 
@@ -31,7 +30,7 @@ namespace Modetor.Net.Server.Core.Backbone
         private static readonly string CONTENT_DISPOSITION = "Content-Disposition:";
 #pragma warning restore CS0414
         private static readonly string CONTENT_TYPE = "Content-Type";
-        private static readonly string FORMDATA_BOUNDARY = "multipart/form-data; boundary=";
+        private static readonly string FORMDATA_BOUNDARY = "multipart/form-data";
         private static readonly string FORMDATA_POST_ENCODED = "application/x-www-form-urlencoded";
         private static readonly string FORMDATA_POST_JSON = "application/json";
 
@@ -270,21 +269,30 @@ namespace Modetor.Net.Server.Core.Backbone
 
                     if (HeaderKeys.ContainsKey(MODETOR_SERVER_BOUNDARY))
                     {
-                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("----")
+                        if (HeaderKeys[MODETOR_SERVER_BOUNDARY].Contains(" boundary=----")
+                            || HeaderKeys[MODETOR_SERVER_BOUNDARY].StartsWith("; boundary=----")
                             || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_ENCODED)
                             || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_BOUNDARY)
+                            || HeaderKeys["Content-Type"].Equals(FORMDATA_BOUNDARY)
                             || HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_JSON))
                         {
                             if(HeaderKeys[MODETOR_SERVER_BOUNDARY].Equals(FORMDATA_POST_JSON))
                             {
                                 string json = Encoding.UTF8.GetString(data);
-                                Dictionary<string, string> dic = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-                                foreach(string key in dic.Keys)
-                                {
-                                    if(!Parameters.AllKeys.Contains(key))
-                                        Parameters.Add(key, dic[key]);
+                                try {
+                                    Dictionary<string, string> dic = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                                    foreach (string key in dic.Keys)
+                                    {
+                                        if (!Parameters.AllKeys.Contains(key))
+                                            Parameters.Add(key, dic[key]);
+                                    }
                                 }
-                                Console.WriteLine(json);
+                                catch(Exception exp)
+                                {
+                                    ErrorLogger.WithTrace(Server.Settings, string.Format("[Error][Server request handler => ReadContentHeader()] : exception-message : {0}.\nstacktrace : {1}\n", exp.Message, exp.StackTrace), GetType());
+                                    return HttpRequestState.PARSE_FAILURE;
+                                }
+                                //Console.WriteLine(json);
                             }
                             else if (Repository.SupportUploads)
                             {
@@ -306,7 +314,7 @@ namespace Modetor.Net.Server.Core.Backbone
                                     }
 
                                     File.WriteAllBytes(filepath, ((MemoryStream)file.Data).ToArray());
-                                    Parameters.Add(file.Name, string.Join(';', file.FileName, filepath));
+                                    Parameters.Add(file.Name, filepath);
                                     P_UploadFilePaths.Add(filepath);
                                 }
 
@@ -366,7 +374,7 @@ namespace Modetor.Net.Server.Core.Backbone
 
             return HttpRequestState.PARSE_FAILURE;
         }
-        private void ParseHeader(string[] headers)
+        public void ParseHeader(string[] headers)
         {
             foreach (string header in headers[1..])
             {
@@ -513,11 +521,15 @@ namespace Modetor.Net.Server.Core.Backbone
             foreach (string key in item.AllKeys)
                 Parameters.Add(key, item.Get(key));
         }
+        public int ParametersCount() => Parameters.Count;
         public void ClearParameters() => Parameters.Clear();
         public bool HasParameters => Parameters.Count > 0;
         public bool ContainParameter(string p) => Parameters.AllKeys?.Contains(p) ?? false;
-        public string GetParameter(string p) => Parameters.Get(p) ?? null;
-        internal void DeleteUploadFiles()
+        public string GetParameter(string p)
+        {
+            return Parameters.Get(p) ?? throw new Exception($"Unknown parameter '{p}'");
+        }
+        public void DeleteUploadFiles()
         {
             try
             {
@@ -534,8 +546,13 @@ namespace Modetor.Net.Server.Core.Backbone
 
             P_UploadFilePaths.Clear();
         }
-
-        internal bool IsWebsocketUpgradRequest()
+        public IBaseServer GetServer()
+        {
+            return Server;
+        }
+        public TcpClient GetClient() { return Client; }
+        public string GetClientAddress() => ClientAddress;
+        public bool IsWebSocketUpgradeRequest()
         {
             //ErrorLogger.WithTrace($"HttpMethod = {HttpMethod}", GetType());
             //ErrorLogger.WithTrace($"HeaderKeys.ContainsKey('Upgrade') = {HeaderKeys.ContainsKey("Upgrade")}", GetType());
@@ -544,7 +561,7 @@ namespace Modetor.Net.Server.Core.Backbone
             return HttpMethod == HttpMethod.GET && HeaderKeys.ContainsKey("Upgrade") && HeaderKeys["Upgrade"].Equals("websocket")
                  && HeaderKeys.ContainsKey("Connection") && HeaderKeys["Connection"].Equals("Upgrade");
         }
-        internal bool IsServerSentEventRequest()
+        public bool IsServerSentEventRequest()
         { 
             return HttpMethod == HttpMethod.GET && HeaderKeys.ContainsKey("Connection") && HeaderKeys["Connection"].Equals("keep-alive")
                  && HeaderKeys.ContainsKey("Accept") && HeaderKeys["Accept"].Equals("text/event-stream");
@@ -555,19 +572,21 @@ namespace Modetor.Net.Server.Core.Backbone
         public byte[] RequestBody;
         public readonly HttpServers.BaseServer Server;
         public HttpRequestState State { get; private set; } = HttpRequestState.None;
-        public readonly string ClientAddress;
-        public readonly string ClientIP;
-        public readonly int ClientPort;
-        public Dictionary<string, string> HeaderKeys;
-        public System.Collections.Specialized.NameValueCollection Parameters;
+        public string ClientAddress { get; set; }
+        public string ClientIP { get; set; }
+        public int ClientPort { get; set; }
+        public Dictionary<string, string> HeaderKeys { get; set; }
+    public System.Collections.Specialized.NameValueCollection Parameters { get; set; }
         public HttpMethod HttpMethod { get; private set; }
         public HttpVersion HttpVersion { get; private set; }
         public string RequestedTarget { get; private set; }
         public string RequestedFileName { get; private set; }
         public string AbsoluteFilePath { get; set; } = null;
-        public Rule Repository { get; private set; } = Rule.Corrupted;
+        public IRule Repository { get; private set; } = Rule.Corrupted;
         public string[] UploadFilePaths => P_UploadFilePaths.ToArray();
         public bool HasUploadedFiles => P_UploadFilePaths.Count > 0;
+
+
         public dynamic Tag, /* Tag is passed from one to another */
                        /* these properties works as a dynamic temporarely memory for the RequestHandler */
                        Reg, Reg1, Reg2;

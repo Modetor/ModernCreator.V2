@@ -1,11 +1,14 @@
-﻿using System;
+﻿using NetBase;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
+using Ubiety.Dns.Core;
 
 namespace Modetor.Net.Server.Core.Backbone
 {
-    public class HttpRespondHeader
+    public class HttpRespondHeader : IHttpRespondHeader
     {
         private static readonly string LineTerminator = "\r\n";
         private static readonly string EXT_JAVASCRIPT = ".js";
@@ -16,6 +19,11 @@ namespace Modetor.Net.Server.Core.Backbone
 
         public static readonly ModetorServerVersion CurrentServerVersion = ModetorServerVersion.V1_0;
 
+        private HttpRespondHeader(HttpRequestHeader requestHeader, HttpServers.BaseServer server)
+        {
+            Request = requestHeader; Server = server;
+        }
+        
         public static HttpRespondHeader GenerateRespond(HttpRequestHeader requestHeader, HttpServers.BaseServer server)
         {
             if (Rule.Corrupted.Equals(requestHeader.Repository))
@@ -224,9 +232,6 @@ namespace Modetor.Net.Server.Core.Backbone
         }
 
 
-
-
-
         public static string GenerateSerializedInput(HttpRequestHeader requestHeader)
         {
             return "[" + Newtonsoft.Json.JsonConvert.SerializeObject(new
@@ -260,9 +265,6 @@ namespace Modetor.Net.Server.Core.Backbone
         }
 
 
-
-
-
         public HttpRespondHeader()
         {
             //RequestHeader = requestHeader;
@@ -283,6 +285,10 @@ namespace Modetor.Net.Server.Core.Backbone
             };
             Header[0] = $"{versionString} {state}{LineTerminator}";
         }
+        public void SetState(string version, string state)
+        {
+            Header[0] = $"{version} {state}{LineTerminator}";
+        }
         public void AddHeader(string key, string value)
         {
             string item = $"{key}: {value}{LineTerminator}";
@@ -291,11 +297,41 @@ namespace Modetor.Net.Server.Core.Backbone
             else
                 Header.Add(item);
         }
-
+        public void AddOrUpdateHeader(string key, string value)
+        {
+            string item = $"{key}: {value}{LineTerminator}";
+            int index = Header.FindIndex(a => a.StartsWith(item));
+            if (index != -1)
+                Header.RemoveAt(index);
+            else
+                Header.Remove(item);
+            Header.Add(item);
+        }
         public void AddExtraLineBreaker() => Header.Add(LineTerminator);
 
         public void SetBody(string body) => SetBody(Encoding.UTF8.GetBytes(body));
+        public void RemoveBody()
+        {
+            if(RespondBuffer.Count == 3)
+                RespondBuffer.RemoveAt(2);
+        }
+        public void OverrideBody(byte[] body)
+        {
+            AddOrUpdateHeader("Content-Length", body.Length.ToString());
+            SetState(HttpVersion.HTTP1_1, (body != null && body.Length > 0) ? HttpRespondState.OK : HttpRespondState.NO_CONTENT);
+            if (P_BodySet)
+            {
+                RespondBuffer[2] = body;
+            }
+            else
+            {
+                RespondBuffer.Add(Encoding.UTF8.GetBytes(LineTerminator));
+                RespondBuffer.Add(body);
+            }
 
+
+            P_BodySet = true;
+        }
         public void SetBody(byte[] body)
         {
             if (body == null)
@@ -317,37 +353,53 @@ namespace Modetor.Net.Server.Core.Backbone
             RespondBuffer[0] = GetHeaderBytes();
             return RespondBuffer.SelectMany(a => a).ToArray();
         }
+        public void ServerSentEventResponse(string state, string eventType, string content, IHttpRequestHeader request)
+        {
+            SetState(HttpVersion.HTTP1_1, "200 OK");
+            AddOrUpdateHeader("X-Accel-Buffering", "no");
+            AddOrUpdateHeader("Content-Type", "text/event-stream");
+            AddOrUpdateHeader("Cache-Control", "no-cache");
+            string body = string.Empty;
 
+            if (eventType != null)
+                body += $"event: {eventType}\n";
+            body += $"data: {content}\n\n";
+            SetBody(body);
+            Respond(request);
+        }
+        public void JSONResponse()
+        {
+            AddOrUpdateHeader("Content-Type", "application/json");
+        }
+        public void Respond(IHttpRequestHeader request)
+        {
+            TcpClient client = request.GetClient();
+            if (client == null) return;
+            NetworkStream stream = client.GetStream();
+            stream?.Write(Build());
+            stream?.Flush();
+        }
         public bool DidRespond() => SelfResponded;
         public void Responded() => SelfResponded = true;
+
+        public void JSONContent(object o)
+        {
+            string json = System.Text.Json.JsonSerializer.Serialize(o);
+            SetBody(json);
+        }
 
         private bool SelfResponded = false;
         private readonly List<byte[]> RespondBuffer;
         private readonly List<string> Header;
         private bool P_BodySet = false;
+
+
+        private IBaseServer Server;
+        private IHttpRequestHeader Request;
     }
 
 
 
 
-    public struct HttpRespondState
-    {
-        public static readonly string SWITCHING_PROTOCOLS = "101 Switching Protocls";
-
-        public static readonly string OK = "200 OK";
-        public static readonly string NO_CONTENT = "204 No Content";
-
-        public static readonly string MOVED_PERMANENTLY = "301 Moved Permanently";
-
-        public static readonly string BAD_REQUEST = "400 Bad Request";
-        public static readonly string MAX_CLIENTS_LIMIT = "401 Max Clients Limit"; /*server specific code*/
-        public static readonly string FORBIDDEN = "403 Forbidden";
-        public static readonly string NOT_FOUND = "404 Not Found";
-        public static readonly string METHOD_NOT_ALLOWED = "405 Method Not Allowed";
-        public static readonly string PAYLOAD_TOO_LARGE = "413 Payload Too Large";
-        public static readonly string UPGRADE_REQUIRED = "426 Upgrade Required";
-
-        public static readonly string INTERNAL_SERVER_ERROR = "500 Internal Server Error";
-        
-    }
+    
 }
